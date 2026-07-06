@@ -1,0 +1,415 @@
+{
+  "report_id": "FA-GGC3530B43670331-20260311132704",
+  "dut_id": "GGC3530B43670331",
+  "test_date": "2026-03-11",
+  "test_stage": "U-Boot (Power-On)",
+  "generated_at": "2026-03-11T13:27:04.816249",
+  "visual_inspection": {
+    "findings": [
+      "Liquid Ingress"
+    ],
+    "notes": "After salt residue was cleaned from RJ45 connector pins and from Eth PD, device is functional"
+  },
+  "phases": {
+    "1": {
+      "name": "PoE Input Stage",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "PoE Input",
+          "rail": "PoE Power Rail",
+          "lsl": 42.5,
+          "nom": "N/A",
+          "usl": 57.0,
+          "dut_value": "45.0000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "MPM3690GQJ-Z",
+          "is_monitor": false
+        },
+        {
+          "tp": "PoE Power",
+          "rail": "PoE Power at U-Boot",
+          "lsl": 1.6,
+          "nom": "N/A",
+          "usl": 12.9,
+          "dut_value": "6.2000",
+          "unit": "W",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "System Power Budget",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP1205",
+          "rail": "POE 5V Rail",
+          "lsl": 4.75,
+          "nom": "5.0",
+          "usl": 5.25,
+          "dut_value": "5.0600",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "MPM3690GQJ-Z PoE PD",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    },
+    "2": {
+      "name": "Miami SoC Core",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP579",
+          "rail": "VDD_CX (Miami Core)",
+          "lsl": 0.88,
+          "nom": "0.9",
+          "usl": 0.99,
+          "dut_value": "0.9000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 1 -> Miami IPQ5332",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP27",
+          "rail": "VDD_SOC_CX",
+          "lsl": 0.8,
+          "nom": "0.85",
+          "usl": 0.913,
+          "dut_value": "0.9000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Miami Core Domain",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP29",
+          "rail": "VDD_SOC_MX",
+          "lsl": 0.865,
+          "nom": "0.865",
+          "usl": 0.935,
+          "dut_value": "0.9100",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Miami Memory Bus",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP578",
+          "rail": "VDD1V95_PMU",
+          "lsl": 1.9,
+          "nom": "1.961",
+          "usl": 2.05,
+          "dut_value": "1.9600",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Miami PMU",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    },
+    "3": {
+      "name": "DDR4 Memory",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP574",
+          "rail": "VDD_DDR (1.2V)",
+          "lsl": 1.14,
+          "nom": "1.197",
+          "usl": 1.26,
+          "dut_value": "1.1900",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 3 -> DDR4",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP576",
+          "rail": "VDD_LDO_2P5_VPP",
+          "lsl": 2.375,
+          "nom": "2.52",
+          "usl": 2.75,
+          "dut_value": "2.5300",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "VPP LDO -> DDR4",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    },
+    "4": {
+      "name": "Shared / Analog",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP503",
+          "rail": "VDD1.8 NAPA (Shared)",
+          "lsl": 1.7,
+          "nom": "1.8",
+          "usl": 1.9,
+          "dut_value": "1.8000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 2 -> Waikiki+Napa",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP28",
+          "rail": "VAA_0P8",
+          "lsl": 0.805,
+          "nom": "0.85",
+          "usl": 0.895,
+          "dut_value": "0.8600",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "0.8V Analog LDO",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP36",
+          "rail": "VAA_1P2",
+          "lsl": 1.261,
+          "nom": "1.3",
+          "usl": 1.339,
+          "dut_value": "1.3000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "1.2V PLL Supply",
+          "is_monitor": true
+        }
+      ],
+      "failures": []
+    },
+    "5": {
+      "name": "Ethernet PHY",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP504",
+          "rail": "VDD1.05 NAPA Core",
+          "lsl": 0.95,
+          "nom": "1.05",
+          "usl": 1.1,
+          "dut_value": "1.0600",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 5 -> QCA8081",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    },
+    "6": {
+      "name": "WiFi / Waikiki / PCIe",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP573",
+          "rail": "DVDD3.3 (Waikiki)",
+          "lsl": 3.14,
+          "nom": "3.294",
+          "usl": 3.46,
+          "dut_value": "3.2900",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 6 -> QCN9274",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP535",
+          "rail": "DVDD5 (Waikiki 5V)",
+          "lsl": 4.75,
+          "nom": "5.0",
+          "usl": 5.25,
+          "dut_value": "5.2000",
+          "unit": "V",
+          "status": "warn",
+          "detail": "MARGINAL (near limit)",
+          "subsystem": "5V -> Waikiki",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP589",
+          "rail": "DVDD3.3_BZT",
+          "lsl": 3.14,
+          "nom": "3.294",
+          "usl": 3.46,
+          "dut_value": "3.2800",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "3.3V BZT",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP34",
+          "rail": "VDD_PCIE_0P925",
+          "lsl": 0.881,
+          "nom": "0.925",
+          "usl": 0.971,
+          "dut_value": "0.9100",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "PCIe SerDes LDO",
+          "is_monitor": true
+        },
+        {
+          "tp": "TP30",
+          "rail": "VDD_PCIE_1P8",
+          "lsl": 1.71,
+          "nom": "1.8",
+          "usl": 1.89,
+          "dut_value": "1.8000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "PCIe I/O LDO",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP31",
+          "rail": "VDD_1V8_PX3",
+          "lsl": 1.71,
+          "nom": "1.8",
+          "usl": 1.89,
+          "dut_value": "1.8000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "1.8V PX3",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    },
+    "7": {
+      "name": "RF Power Amps",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP569",
+          "rail": "VDD_XPA (5G PA)",
+          "lsl": 4.0,
+          "nom": "4.22",
+          "usl": 4.43,
+          "dut_value": "4.2000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 8 -> SKY85500 FEM x2",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP577",
+          "rail": "AVDD3.3_2G (2.4G IPA)",
+          "lsl": 3.13,
+          "nom": "3.294",
+          "usl": 3.48,
+          "dut_value": "3.2900",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Buck 7 -> Miami IPA",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    },
+    "8": {
+      "name": "Standby / Misc",
+      "verdict": "PASS",
+      "test_points": [
+        {
+          "tp": "TP55",
+          "rail": "STBY_VDD3.3",
+          "lsl": 3.14,
+          "nom": "3.294",
+          "usl": 3.46,
+          "dut_value": "3.2000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Standby LDO",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP590",
+          "rail": "LED_5V_3V3",
+          "lsl": 3.0,
+          "nom": "3.3",
+          "usl": 3.6,
+          "dut_value": "3.3000",
+          "unit": "V",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "KTD2027B LED",
+          "is_monitor": false
+        },
+        {
+          "tp": "TP56",
+          "rail": "USB-C Orient (A)",
+          "lsl": 0.0,
+          "nom": "N/A",
+          "usl": 0.6,
+          "dut_value": "0.0000",
+          "unit": "V",
+          "status": "warn",
+          "detail": "MARGINAL (near limit)",
+          "subsystem": "FUSB15201MX",
+          "is_monitor": true
+        },
+        {
+          "tp": "TP56",
+          "rail": "USB-C Orient (B)",
+          "lsl": 2.7,
+          "nom": "N/A",
+          "usl": 3.6,
+          "dut_value": "0.0000",
+          "unit": "V",
+          "status": "monitor",
+          "detail": "MONITOR: DEAD (0V)",
+          "subsystem": "FUSB15201MX",
+          "is_monitor": true
+        },
+        {
+          "tp": "System",
+          "rail": "PoE Power QSDK",
+          "lsl": 3.0,
+          "nom": "N/A",
+          "usl": 12.9,
+          "dut_value": "6.4000",
+          "unit": "W",
+          "status": "pass",
+          "detail": "PASS",
+          "subsystem": "Full System",
+          "is_monitor": false
+        }
+      ],
+      "failures": []
+    }
+  },
+  "overall_verdict": "FAIL \u2014 Liquid Ingress",
+  "failed_subsystems": [],
+  "root_causes": [
+    "Liquid Ingress detected during Visual Inspection"
+  ],
+  "dfmea_entries": []
+}

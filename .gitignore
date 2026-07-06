@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Streamlit local config accidentally created inside the project
+/~/
+
+# Local secrets / environment (safety net — none currently in repo)
+.env
+.env.*
+*.pem
+*.key
+credentials*.json

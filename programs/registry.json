@@ -1,0 +1,18 @@
+{
+  "programs": {
+    "Snowbird": {
+      "slug": "snowbird",
+      "display_name": "Snowbird",
+      "product": "eero Outdoor 7 (Snowbird)",
+      "description": "WiFi 7 Outdoor Access Point \u2014 IP66, PoE, tri-band",
+      "directory": "/Users/anishdut/Documents/Failure analysis tool/EFFA/programs/snowbird"
+    },
+    "Merci": {
+      "slug": "merci",
+      "display_name": "Merci",
+      "product": "eero Pro 7",
+      "description": "Wifi7",
+      "directory": "/Users/anishdut/Documents/Failure analysis tool/EFFA/programs/merci"
+    }
+  }
+}

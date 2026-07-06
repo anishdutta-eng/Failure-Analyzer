@@ -1,0 +1,700 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime
+from collections import Counter
+import io
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from triage_assistant import render_triage_ui
+from debugger import render_debugger_ui
+from debug_analytics import render_analytics_ui
+from program_config import (
+    get_program_list, register_program, get_selected_program,
+    set_selected_program, load_registry, get_program_dir
+)
+
+# Page configuration
+st.set_page_config(
+    page_title="Failure Analysis Pattern Recognition Tool",
+    page_icon="🔍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS
+st.markdown("""
+    <style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f77b4;
+        text-align: center;
+        padding: 1rem 0;
+    }
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border-left: 4px solid #1f77b4;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+@st.cache_data(show_spinner=False)
+def _load_dashboard_dataframe(file_bytes):
+    """Parse and clean the uploaded CSV. Cached on file content so it only
+    re-parses when a different file is uploaded."""
+    df = pd.read_csv(io.BytesIO(file_bytes))
+    # Filter out "Won't do" cases from dashboard
+    df = df[df['Root_Cause'] != "Won't do"].copy()
+    # Convert date column
+    df['User_Reported_Date'] = pd.to_datetime(df['User_Reported_Date'], errors='coerce')
+    return df
+
+
+class FailureAnalysisTool:
+    def __init__(self):
+        self.df = None
+        self.program_name = None
+        
+    def load_data(self, file, program_name):
+        """Load CSV data and filter out 'Won't do' cases (cached parse)."""
+        self.df = _load_dashboard_dataframe(file.getvalue())
+        self.program_name = program_name
+        return self.df
+    
+    def get_summary_stats(self):
+        """Calculate summary statistics"""
+        total_returns = len(self.df)
+        root_cause_identified = len(self.df[self.df['Root_Cause'] == 'Root Cause Identified'])
+        no_failure_found = len(self.df[self.df['Root_Cause'] == 'No Failure Found'])
+        wont_do = len(self.df[self.df['Root_Cause'] == "Won't do"])
+        
+        return {
+            'total_returns': total_returns,
+            'root_cause_identified': root_cause_identified,
+            'no_failure_found': no_failure_found,
+            'wont_do': wont_do,
+            'analysis_rate': f"{(root_cause_identified/total_returns*100):.1f}%" if total_returns > 0 else "0%"
+        }
+    
+    def plot_return_reasons(self):
+        """Plot return reason distribution"""
+        reason_counts = self.df['Return_Reason_Code'].value_counts()
+        
+        fig = px.bar(
+            x=reason_counts.index,
+            y=reason_counts.values,
+            labels={'x': 'Return Reason', 'y': 'Count'},
+            title=f'{self.program_name} - Return Reasons Distribution',
+            color=reason_counts.values,
+            color_continuous_scale='Blues'
+        )
+        fig.update_layout(showlegend=False, xaxis_tickangle=-45)
+        return fig
+    
+    def plot_root_cause_analysis(self):
+        """Plot root cause breakdown"""
+        root_cause_df = self.df[self.df['Root_Cause'].notna()]
+        cause_counts = root_cause_df['Root_Cause'].value_counts()
+        
+        fig = px.pie(
+            values=cause_counts.values,
+            names=cause_counts.index,
+            title=f'{self.program_name} - Root Cause Analysis Status',
+            hole=0.4
+        )
+        return fig
+    
+    def plot_timeline(self):
+        """Plot returns over time"""
+        timeline_df = self.df[self.df['User_Reported_Date'].notna()].copy()
+        timeline_df['Month'] = timeline_df['User_Reported_Date'].dt.to_period('M').astype(str)
+        monthly_counts = timeline_df.groupby('Month').size().reset_index(name='Count')
+        
+        fig = px.line(
+            monthly_counts,
+            x='Month',
+            y='Count',
+            title=f'{self.program_name} - Returns Timeline',
+            markers=True
+        )
+        fig.update_traces(line_color='#1f77b4', line_width=3)
+        return fig
+    
+    def plot_sw_hw_breakdown(self):
+        """Plot SW vs HW issues"""
+        sw_yes = len(self.df[self.df['SW_Related_Issue'] == 'YES'])
+        hw_yes = len(self.df[self.df['HW_Related_Issue'] == 'YES'])
+        sw_no = len(self.df[self.df['SW_Related_Issue'] == 'NO'])
+        hw_no = len(self.df[self.df['HW_Related_Issue'] == 'NO'])
+        
+        fig = go.Figure(data=[
+            go.Bar(name='Software', x=['Related', 'Not Related'], y=[sw_yes, sw_no]),
+            go.Bar(name='Hardware', x=['Related', 'Not Related'], y=[hw_yes, hw_no])
+        ])
+        fig.update_layout(
+            title=f'{self.program_name} - SW vs HW Issue Distribution',
+            barmode='group',
+            xaxis_title='Issue Type',
+            yaxis_title='Count'
+        )
+        return fig
+    
+    def create_fault_tree(self):
+        """Create fault wheel analysis using hierarchical structure"""
+        # FWA Methodology: Top-down deductive analysis
+        # Top Event -> Intermediate Events -> Basic Events (root causes)
+        
+        # Analyze root causes from data
+        root_causes = self.df[self.df['Root_Cause_Reason'].notna()]['Root_Cause_Reason'].value_counts()
+        
+        if len(root_causes) == 0:
+            # Return empty figure if no data
+            fig = go.Figure()
+            fig.add_annotation(text="No failure data available for fault wheel analysis",
+                             xref="paper", yref="paper",
+                             x=0.5, y=0.5, showarrow=False)
+            return fig
+        
+        # Build hierarchical fault wheel structure
+        # Level 0: Top Event (System Failure)
+        # Level 1: Intermediate Events (Failure Categories)
+        # Level 2: Basic Events (Root Causes)
+        
+        # Categorize root causes into intermediate events
+        categories = {
+            'Hardware Failures': [],
+            'Software Failures': [],
+            'Environmental Failures': [],
+            'Power Failures': [],
+            'Installation Failures': []
+        }
+        
+        for cause, count in root_causes.items():
+            cause_lower = str(cause).lower()
+            
+            # Categorize based on keywords
+            if any(kw in cause_lower for kw in ['emmc', 'component', 'capacitor', 'solder', 'pcb', 'hardware', 'eipd', 'eos']):
+                categories['Hardware Failures'].append((cause, count))
+            elif any(kw in cause_lower for kw in ['firmware', 'software', 'cloud', 'registration', 'certificate']):
+                categories['Software Failures'].append((cause, count))
+            elif any(kw in cause_lower for kw in ['liquid', 'ingress', 'temperature', 'thermal', 'moisture', 'corrosion']):
+                categories['Environmental Failures'].append((cause, count))
+            elif any(kw in cause_lower for kw in ['poe', 'power', 'voltage', 'electrical']):
+                categories['Power Failures'].append((cause, count))
+            elif any(kw in cause_lower for kw in ['mount', 'bracket', 'installation', 'setup']):
+                categories['Installation Failures'].append((cause, count))
+            else:
+                # Default to hardware
+                categories['Hardware Failures'].append((cause, count))
+        
+        # Remove empty categories
+        categories = {k: v for k, v in categories.items() if len(v) > 0}
+        
+        # Build tree structure for visualization
+        labels = ['System Failure<br>(Top Event)']
+        parents = ['']
+        values = [root_causes.sum()]
+        colors = ['#ff6b6b']  # Red for top event
+        
+        # Add intermediate events (categories)
+        for category, causes in categories.items():
+            category_total = sum(count for _, count in causes)
+            labels.append(f'{category}<br>({category_total} cases)')
+            parents.append('System Failure<br>(Top Event)')
+            values.append(category_total)
+            colors.append('#4ecdc4')  # Teal for intermediate
+            
+            # Add basic events (root causes)
+            for cause, count in causes[:5]:  # Limit to top 5 per category
+                labels.append(f'{cause}<br>({count})')
+                parents.append(f'{category}<br>({category_total} cases)')
+                values.append(count)
+                colors.append('#95e1d3')  # Light teal for basic events
+        
+        # Create sunburst diagram for fault wheel
+        # Build per-label text colors: black for center, white for outer rings
+        text_colors = ['black']  # Center "System Failure" label
+        for _ in categories:
+            text_colors.append('black')  # Category labels
+        for category, causes in categories.items():
+            for _ in causes[:5]:
+                text_colors.append('black')  # Root cause labels
+
+        fig = go.Figure(go.Sunburst(
+            labels=labels,
+            parents=parents,
+            values=values,
+            branchvalues="total",
+            marker=dict(
+                colors=colors,
+                line=dict(color='white', width=2)
+            ),
+            hovertemplate='<b>%{label}</b><br>Cases: %{value}<br>%{percentParent}<extra></extra>',
+            textfont=dict(size=12, color=text_colors),
+            insidetextfont=dict(color=text_colors)
+        ))
+        
+        fig.update_layout(
+            title={
+                'text': f'{self.program_name} - Fault Wheel Analysis (FWA)<br><sub>Top-Down Deductive Analysis: System Failure → Categories → Root Causes</sub>',
+                'x': 0.5,
+                'xanchor': 'center'
+            },
+            height=600,
+            margin=dict(t=100, l=0, r=0, b=0)
+        )
+        
+        return fig
+    
+    def plot_shipment_status(self):
+        """Plot shipment status"""
+        status_counts = self.df['Shipment_Status'].value_counts()
+        
+        fig = px.bar(
+            x=status_counts.index,
+            y=status_counts.values,
+            title=f'{self.program_name} - Shipment Status',
+            labels={'x': 'Status', 'y': 'Count'},
+            color=status_counts.values,
+            color_continuous_scale='Viridis'
+        )
+        return fig
+    
+    def generate_report(self):
+        """Generate Word document report"""
+        doc = Document()
+        
+        # Title
+        title = doc.add_heading(f'{self.program_name} Failure Analysis Report', 0)
+        title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        
+        # Date
+        doc.add_paragraph(f'Generated on: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+        doc.add_paragraph()
+        
+        # Summary Statistics
+        doc.add_heading('Executive Summary', 1)
+        stats = self.get_summary_stats()
+        doc.add_paragraph(f"Total Returns: {stats['total_returns']}")
+        doc.add_paragraph(f"Root Cause Identified: {stats['root_cause_identified']}")
+        doc.add_paragraph(f"No Failure Found: {stats['no_failure_found']}")
+        doc.add_paragraph(f"Won't Do: {stats['wont_do']}")
+        doc.add_paragraph(f"Analysis Success Rate: {stats['analysis_rate']}")
+        doc.add_paragraph()
+        
+        # Top Return Reasons
+        doc.add_heading('Top Return Reasons', 1)
+        top_reasons = self.df['Return_Reason_Code'].value_counts().head(10)
+        for reason, count in top_reasons.items():
+            doc.add_paragraph(f"{reason}: {count}", style='List Bullet')
+        doc.add_paragraph()
+        
+        # Root Cause Analysis
+        doc.add_heading('Root Cause Breakdown', 1)
+        root_causes = self.df[self.df['Root_Cause_Reason'].notna()]['Root_Cause_Reason'].value_counts()
+        for cause, count in root_causes.items():
+            doc.add_paragraph(f"{cause}: {count}", style='List Bullet')
+        doc.add_paragraph()
+        
+        # SW vs HW
+        doc.add_heading('Software vs Hardware Issues', 1)
+        sw_yes = len(self.df[self.df['SW_Related_Issue'] == 'YES'])
+        hw_yes = len(self.df[self.df['HW_Related_Issue'] == 'YES'])
+        doc.add_paragraph(f"Software Related: {sw_yes}")
+        doc.add_paragraph(f"Hardware Related: {hw_yes}")
+        
+        # Save to buffer
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        return buffer
+
+@st.cache_data(show_spinner=False)
+def _generate_report_bytes(file_bytes, program_name):
+    """Build the Word report once per (file, program). Returns raw bytes so the
+    result is cacheable and reused across reruns for the download button."""
+    tool = FailureAnalysisTool()
+    tool.df = _load_dashboard_dataframe(file_bytes)
+    tool.program_name = program_name
+    return tool.generate_report().getvalue()
+
+
+# Initialize app
+def _render_program_selector():
+    """Render the program selection landing page. Returns True if a program is selected."""
+    st.markdown('<div class="main-header">🔍 Failure Analysis Pattern Recognition Tool</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;color:#888;margin-bottom:24px;">Multi-program failure analysis, triage, PCB debug and statistical analytics</div>', unsafe_allow_html=True)
+
+    programs = get_program_list()
+
+    if programs:
+        st.markdown("### Select a Program")
+        cols = st.columns(min(len(programs), 4))
+        registry = load_registry()
+        for i, name in enumerate(programs):
+            info = registry["programs"].get(name, {})
+            with cols[i % len(cols)]:
+                st.markdown(
+                    f'<div style="background:#1a1a2e;border:1px solid #0f3460;border-radius:10px;padding:16px;text-align:center;">'
+                    f'<div style="font-size:1.3em;font-weight:700;color:#e0e0e0;">{info.get("display_name", name)}</div>'
+                    f'<div style="color:#888;font-size:.85em;margin:6px 0;">{info.get("product", "")}</div>'
+                    f'<div style="color:#666;font-size:.8em;">{info.get("description", "")}</div></div>',
+                    unsafe_allow_html=True,
+                )
+                if st.button(f"Open {name}", key=f"sel_{name}", use_container_width=True):
+                    set_selected_program(name)
+                    st.rerun()
+
+    st.markdown("---")
+    st.markdown("### Register New Program")
+    with st.form("new_program_form"):
+        c1, c2 = st.columns(2)
+        with c1:
+            new_name = st.text_input("Program Name", placeholder="e.g. Falcon")
+            new_product = st.text_input("Product Name", placeholder="e.g. eero Indoor 7")
+        with c2:
+            new_display = st.text_input("Display Name (optional)", placeholder="Same as program name if blank")
+            new_desc = st.text_input("Description", placeholder="e.g. WiFi 7 Indoor Mesh Router")
+        submitted = st.form_submit_button("Register Program", use_container_width=True)
+        if submitted and new_name.strip():
+            register_program(
+                new_name.strip(),
+                display_name=new_display.strip() or None,
+                product=new_product.strip() or None,
+                description=new_desc.strip(),
+            )
+            set_selected_program(new_name.strip())
+            st.rerun()
+        elif submitted:
+            st.warning("Please enter a program name.")
+
+
+def main():
+    # If no program selected yet, show the selector
+    selected = get_selected_program()
+    if not selected:
+        _render_program_selector()
+        return
+
+    program_name = selected
+
+    st.markdown('<div class="main-header">🔍 Failure Analysis Pattern Recognition Tool</div>', unsafe_allow_html=True)
+    
+    # Sidebar
+    with st.sidebar:
+        st.header("⚙️ Configuration")
+
+        # Show current program with option to switch
+        st.markdown(f"**Program:** {program_name}")
+        if st.button("↩ Switch Program", use_container_width=True):
+            set_selected_program(None)
+            # Clear program-specific session state
+            for key in list(st.session_state.keys()):
+                if key.startswith("debugger_") or key in ("triage_assistant", "vi_findings", "vi_notes"):
+                    del st.session_state[key]
+            st.rerun()
+        
+        # File upload
+        uploaded_file = st.file_uploader(
+            "Upload CSV File",
+            type=['csv'],
+            help="Upload your failure returns CSV file"
+        )
+        
+        st.markdown("---")
+        st.markdown("### 📑 View Selection")
+        view_mode = st.radio(
+            "Select View",
+            options=["📊 Dashboard", "🔧 Triage Assistant", "PCB Debugger", "📈 Debug Analytics", "📋 Failure Analysis Table"],
+            help="Switch between analysis dashboard, triage tool, PCB debugger, statistical analytics, and detailed failure table"
+        )
+        
+        if view_mode == "📊 Dashboard":
+            st.markdown("---")
+            st.markdown("### 📊 Analysis Options")
+            show_summary = st.checkbox("Summary Statistics", value=True)
+            show_charts = st.checkbox("Visualizations", value=True)
+            show_fault_tree = st.checkbox("Fault Wheel Analysis", value=True)
+            show_data_table = st.checkbox("Data Table", value=False)
+        else:
+            show_summary = False
+            show_charts = False
+            show_fault_tree = False
+            show_data_table = False
+        
+        # Exit button at the bottom
+        st.markdown("---")
+        if st.button("🚪 Exit Application", type="secondary", use_container_width=True):
+            st.success("👋 Thank you for using the Failure Analysis Tool!")
+            st.info("You can safely close this browser tab now.")
+            st.balloons()
+            st.stop()
+        
+    # Main content
+    if uploaded_file is not None:
+        tool = FailureAnalysisTool()
+        df = tool.load_data(uploaded_file, program_name)
+        
+        # Route to appropriate view
+        if view_mode == "🔧 Triage Assistant":
+            render_triage_ui(df)
+            return
+        elif view_mode == "📋 Failure Analysis Table":
+            render_failure_table(df, program_name)
+            return
+        elif view_mode == "PCB Debugger":
+            render_debugger_ui()
+            return
+        elif view_mode == "📈 Debug Analytics":
+            render_analytics_ui()
+            return
+        
+        # Summary Statistics
+        if show_summary:
+            st.header("📈 Summary Statistics")
+            stats = tool.get_summary_stats()
+            
+            col1, col2, col3, col4, col5 = st.columns(5)
+            with col1:
+                st.metric("Total Returns", stats['total_returns'])
+            with col2:
+                st.metric("Root Cause ID'd", stats['root_cause_identified'])
+            with col3:
+                st.metric("No Failure Found", stats['no_failure_found'])
+            with col4:
+                st.metric("Won't Do", stats['wont_do'])
+            with col5:
+                st.metric("Analysis Rate", stats['analysis_rate'])
+            
+            st.markdown("---")
+        
+        # Visualizations
+        if show_charts:
+            st.header("📊 Visualizations")
+            
+            # Row 1
+            col1, col2 = st.columns(2)
+            with col1:
+                st.plotly_chart(tool.plot_return_reasons(), use_container_width=True)
+            with col2:
+                st.plotly_chart(tool.plot_root_cause_analysis(), use_container_width=True)
+            
+            # Row 2
+            col1, col2 = st.columns(2)
+            with col1:
+                st.plotly_chart(tool.plot_timeline(), use_container_width=True)
+            with col2:
+                st.plotly_chart(tool.plot_sw_hw_breakdown(), use_container_width=True)
+            
+            # Row 3
+            st.plotly_chart(tool.plot_shipment_status(), use_container_width=True)
+            
+            st.markdown("---")
+        
+        # Fault Wheel Analysis
+        if show_fault_tree:
+            st.header("Fault Wheel Analysis")
+            st.plotly_chart(tool.create_fault_tree(), use_container_width=True)
+            st.markdown("---")
+        
+        # Data Table
+        if show_data_table:
+            st.header("📋 Data Table")
+            st.dataframe(df, use_container_width=True)
+            st.markdown("---")
+        
+        # Report Generation
+        st.header("📄 Report Generation")
+        # Build the report once per (file, program); cached across reruns so the
+        # Word document isn't regenerated on every interaction.
+        report_bytes = _generate_report_bytes(uploaded_file.getvalue(), program_name)
+        col1, col2, col3 = st.columns([1, 1, 2])
+        with col1:
+            if st.button("🔄 Generate Report", type="primary"):
+                st.success("Report generated successfully!")
+
+        with col2:
+            st.download_button(
+                label="⬇️ Download Report",
+                data=report_bytes,
+                file_name=f"{program_name}_Failure_Analysis_Report_{datetime.now().strftime('%Y%m%d')}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+        
+        # Export filtered data
+        with col3:
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+            st.download_button(
+                label="⬇️ Export Data (CSV)",
+                data=csv_buffer.getvalue(),
+                file_name=f"{program_name}_data_export_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv"
+            )
+    
+    else:
+        # PCB Debugger works without CSV data
+        if view_mode == "PCB Debugger":
+            render_debugger_ui()
+            return
+        if view_mode == "📈 Debug Analytics":
+            render_analytics_ui()
+            return
+
+        # Welcome screen
+        st.info("👈 Please upload a CSV file to begin analysis")
+        st.markdown("""
+        ### Welcome to the Failure Analysis Tool
+        
+        This tool helps you analyze field return data and identify patterns in failures.
+        
+        **Features:**
+        - 📊 Interactive visualizations and charts
+        - Fault wheel analysis
+        - 📈 Trend analysis over time
+        - 🔍 SW vs HW issue breakdown
+        - 📄 Automated report generation
+        - 💾 Data export capabilities
+        
+        **Getting Started:**
+        1. Enter your program name in the sidebar
+        2. Upload your CSV file
+        3. Explore the visualizations and insights
+        4. Generate and download reports
+        """)
+
+
+def render_failure_table(df_original, program_name):
+    """Render comprehensive failure analysis table"""
+    st.header(f"📋 {program_name} - Comprehensive Failure Analysis Table")
+    
+    # Load original data (before filtering)
+    df = df_original.copy()
+    
+    # Summary metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    total_returns = len(df)
+    real_failures = len(df[df['Root_Cause'] == 'Root Cause Identified'])
+    ntf_cases = len(df[df['Root_Cause'] == 'No Failure Found'])
+    wont_do = len(df[df['Root_Cause'] == "Won't do"])
+    
+    col1.metric("Total Returns", total_returns)
+    col2.metric("✅ Real Failures", real_failures, f"{real_failures/total_returns*100:.1f}%")
+    col3.metric("❌ NTF", ntf_cases, f"{ntf_cases/total_returns*100:.1f}%")
+    col4.metric("⚠️ Won't Do", wont_do, f"{wont_do/total_returns*100:.1f}%")
+    
+    st.markdown("---")
+    
+    # Real Failures
+    with st.expander("✅ REAL FAILURES - Root Cause Identified", expanded=True):
+        real_fail = df[df['Root_Cause'] == 'Root Cause Identified'].copy()
+        st.write(f"**Total: {len(real_fail)} cases**")
+        
+        if len(real_fail) > 0:
+            # Normalize root causes
+            cause_summary = real_fail['Root_Cause_Reason'].value_counts()
+            st.markdown("**Breakdown by Root Cause:**")
+            for cause, count in cause_summary.items():
+                st.write(f"- **{cause}**: {count} case(s)")
+            
+            st.markdown("**Detailed Cases:**")
+            display_cols = ['ID', 'User_Reported_Date', 'Return_Reason_Code', 'Root_Cause_Reason', 
+                           'Power_Adapter', 'SW_Related_Issue', 'HW_Related_Issue', 'Jira_Ticket']
+            st.dataframe(real_fail[display_cols], use_container_width=True, hide_index=True)
+    
+    # No Trouble Found
+    with st.expander("❌ NO TROUBLE FOUND (NTF)", expanded=True):
+        ntf = df[df['Root_Cause'] == 'No Failure Found'].copy()
+        st.write(f"**Total: {len(ntf)} cases**")
+        
+        if len(ntf) > 0:
+            ntf_reasons = ntf['Return_Reason_Code'].value_counts()
+            st.markdown("**Breakdown by Return Reason:**")
+            for reason, count in ntf_reasons.items():
+                st.write(f"- **{reason}**: {count} case(s)")
+            
+            st.markdown("**Detailed Cases:**")
+            display_cols = ['ID', 'User_Reported_Date', 'Return_Reason_Code', 'Root_Cause_Reason', 'Comments']
+            st.dataframe(ntf[display_cols], use_container_width=True, hide_index=True)
+    
+    # Won't Do
+    with st.expander("⚠️ WON'T DO - Not Analyzed (Units Not Returned)", expanded=False):
+        wont = df[df['Root_Cause'] == "Won't do"].copy()
+        st.warning(f"**{len(wont)} cases** marked as 'Won't do' - units were never returned for analysis")
+        
+        if len(wont) > 0:
+            wont_reasons = wont['Return_Reason_Code'].value_counts()
+            st.markdown("**Breakdown by Return Reason:**")
+            for reason, count in wont_reasons.items():
+                st.write(f"- **{reason}**: {count} case(s)")
+            
+            st.markdown("**Detailed Cases:**")
+            display_cols = ['ID', 'User_Reported_Date', 'Return_Reason_Code', 'Unit_SN', 'Comments']
+            st.dataframe(wont[display_cols], use_container_width=True, hide_index=True)
+    
+    st.markdown("---")
+    
+    # DAA Analysis
+    st.subheader("🔍 DAA (Dead After Arrival) Analysis")
+    daa_cases = df[df['Return_Reason_Code'] == 'DAA'].copy()
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total DAA", len(daa_cases))
+    col2.metric("Real Failures", len(daa_cases[daa_cases['Root_Cause'] == 'Root Cause Identified']))
+    col3.metric("NTF", len(daa_cases[daa_cases['Root_Cause'] == 'No Failure Found']))
+    col4.metric("Won't Do", len(daa_cases[daa_cases['Root_Cause'] == "Won't do"]))
+    
+    daa_real = daa_cases[daa_cases['Root_Cause'] == 'Root Cause Identified']
+    if len(daa_real) > 0:
+        st.markdown("**DAA Root Causes:**")
+        for idx, row in daa_real.iterrows():
+            st.write(f"- **ID {row['ID']}**: {row['Root_Cause_Reason']}")
+    
+    st.markdown("---")
+    
+    # Power/PSU Analysis
+    st.subheader("⚡ Power Adapter / PSU Analysis")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Power Adapter Distribution:**")
+        power_dist = df['Power_Adapter'].value_counts()
+        for adapter, count in power_dist.head(10).items():
+            if pd.notna(adapter):
+                st.write(f"- {adapter}: {count}")
+    
+    with col2:
+        st.markdown("**PSU-Related Failures:**")
+        goldfinch_cases = df[df['Power_Adapter'] == 'Goldfinch']
+        goldfinch_failures = goldfinch_cases[goldfinch_cases['Root_Cause'] == 'Root Cause Identified']
+        
+        st.write(f"- Goldfinch (30W PSU) total: {len(goldfinch_cases)}")
+        st.write(f"- Goldfinch failures: {len(goldfinch_failures)}")
+        
+        exothermic = df[df['Root_Cause_Reason'].str.contains('exothermic', case=False, na=False)]
+        if len(exothermic) > 0:
+            st.write(f"- **Exothermic events: {len(exothermic)}**")
+    
+    st.markdown("---")
+    
+    # Liquid Ingress
+    st.subheader("💧 Liquid Ingress Analysis")
+    liquid_cases = df[df['Root_Cause_Reason'].str.contains('liquid|ingress', case=False, na=False)]
+    
+    st.write(f"**Total: {len(liquid_cases)} cases**")
+    st.info("Note: Case variations (liquid ingress / Liquid Ingress) are the same failure mode")
+    
+    for idx, row in liquid_cases.iterrows():
+        st.write(f"- **ID {row['ID']}**: {row['Root_Cause_Reason']}")
+
+
+if __name__ == "__main__":
+    main()
+

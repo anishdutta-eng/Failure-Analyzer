@@ -1,0 +1,63 @@
+ID,User_Reported_Date,Return_Reason_Code,Unit_SN,Power_Adapter,PSU_MFG_WW,Jira_Ticket,Jira_Ticket_Reported,FA_Status,Shipment_Status,CM_Ticket,Root_Cause,Root_Cause_Reason,SW_Related_Issue,SW_JIRA,HW_Related_Issue,NTF,Comments
+1,11/17/24,Stuck flashing blue,GGC3530B44031206,Goldfinch,,EFFA-1295,Done,Done,Delivered,,Root Cause Identified,Cloud registration,YES,CONN-45729 INCIDENT-754,NO,NO,Connectivity issue: CONN-45729 due to QC bug where cloud keys and keys on the board failed the check.
+2,11/29/24,Setup Issue,GGC3530B43972718,Goldfinch,,EFFA-1296,Done,Done,Delivered,LUX-10203,Root Cause Identified,Mount Bracket,NO,NA,YES,NO,Force of insertion is being reviewed at Luxshare for a controlled force analysis for the mounting bracket. New fixture is designed.
+3,11/22/24,Poor performance,GGC3530B43970202,Goldfinch,,EFFA-1297,Done,Done,Delivered,,No Failure Found,Poor throughput,YES,CONN-47911,NO,,Log analysis and software debug showed no failure found
+4,11/26/25,DAA,GGC3530A43564149,PoE switch,,EFFA-1298,Done,Done,Expired,,Won't do,NA,,,,,Unit was never returned
+5,11/29/25,DAA,GGC3530B44031164,Goldfinch,,EFFA-1299,Done,NA,N/A,,Won't do,NA,NO,NO,,,Best buy has not returned yet.
+6,11/28/24,Stuck flashing white,GGC3530A43560452,Tenda TEG1105p-4,,EFFA-1300,Done,NA,Expired,,Won't do,NA,,,,,Never returned
+7,12/12/24,DAA,GGC3530A43565488,TP-Link PoE++ 60W Injector,,EFFA-1301,Done,Done,Delivered,LUX-10289,Root Cause Identified,eMMC corruption,NO,,YES,NO,DAA is due to eMMC firmware corruption (they suspect external ambient temperature cause this) the work around is re-load the firmware.
+8,12/13/24,QR code broken,NA,NA,,EFFA-1303,Done,Done,Corrective Action Implemented,,QR code broken,QR code broken,,,,,QR code in the instruction manual for SKUs in canada has broken link
+9,12/2/24,DAA,GGC3530A43561401,Goldfinch,,EFFA-1304,Done,Done,Expired,,Won't do,,NO,NO,NO,,Never returned
+10,12/16/24,Setup issue,GGC3530A43561190,TP-Link TL-POE160S | PoE+,,EFFA-1305,Done,Done,Delivered,,Root Cause Identified,Cloud registration,YES,CONN-45729 INCIDENT-754,NO,NO,Connectivity issue: CONN-45729 due to QC bug where cloud keys and keys on the board failed the check.
+11,12/22/24,DAA,GGC3530B44031979,Goldfinch,,EFFA-1306,Done,Done,Expired,,Root Cause Identified,Liquid ingress,NO,,YES,NO,Failure due to either a lightning strike or liquid ingress due to not locking the m22 seal
+12,12/9/24,Poor performance,GGC3530B44030173,Goldfinch,,EFFA-1307,Done,Done,Delivered,,No Failure Found,Poor throughput,NO,NO,YES,,Wireless testing shows device performance similar to KGU
+13,12/13/24,Poor performance,GGC3530B44031295,Goldfinch,,EFFA-1308,Done,Done,Delivered,,No Failure Found,Poor throughput,NO,NO,YES,,Wireless testing shows device performance similar to KGU
+14,12/12/24,DAA,GGC3530B44031397,Goldfinch,,EFFA-1309,Done,Done,,Root Cause Identified,Liquid ingress,NO,NO,NO,,Without any new information from the user on how the unit was oriented the system failure has been root caused and liquid ingress due to suspected in-correct orientation is believed to be the reason for this failure mode. The issue was reproduced and the results were similar to the field returned unit where liquid was slowly introduced with the unit kept upside down. FTIR was also done to identify foreign residues in the returned unit and is confirmed to be a product of the liquid ingress. PD team is confident that the m22 gland design does not need any update and IP66 testing is accurate for Snowbird's use case. The team is confident that in the correct orientation of Snowbird with proper tightening of the m22 gland and with the help of gravity unit should be safe from liquid ingress. We will continue to monitor field returns for any more liquid ingress failure modes,
+15,12/16/24,Poor performance,GGC3530B44030294,Goldfinch,,EFFA-1310,Done,Done,Delivered,,No Failure Found,,NO,NO,YES,,Unable to get coverage in metal shed. Wireless testing shows device performance similar to KGU
+16,,Poor performance,GGC3530B44031378,Goldfinch,,EFFA-1311,Done,Done,Delivered,,No Failure Found,,NO,NO,YES,,Wireless testing shows device performance similar to KGU
+17,1/2/25,Missing accessory,GGC3530A43561821,Goldfinch,,EFFA-1312,Done,Done,Delivered,,No Failure Found,,YES,,,,Factory testing did not find any evidence that accessory was missing based on weight.
+18,1/3/25,Cosmetic issue,GGC3530B44640895,Goldfinch,,EFFA-1313,Done,Done,Delivered,,No Failure Found,,NO,NO,YES,,Received the physical unit in LG. From initial inspection we observed the following: Chipped back casing material. Dent marks on the back side and front Impact scratches on the edge. The chipped crack is around 6mm length the maximum width of the crack around 2.5mm and the narrow part of the crack is 1.5mm. It seems unlikely that usage vibration and gravity would create a crack as big as this
+19,1/22/25,DAA,GGC3530A43564627,daggo gnwe24-b 24 port poe 250w,,EFFA-1318,Done,Done,Delivered,LUX-10613,Root Cause Identified,EIPD,YES,,,,Based on evidence obtained from failure analysis Electrical Overstress (EOS) is the most likely cause of the Electrically Induced Physical Damage (EIPD). TI has confirmed that leakage testing is performed at the end of the last test insertion for this TI device and as a result EOS damage that occurred at TI is judged to be unlikely
+20,1/29/25,DAA,GGC3530B44431575,PoE injector Araknis Networks Gigabit PoE+ Injector AN-ACC-INJ-POE 30W,,EFFA-1320,Done,Done,Delivered,LUX-10613,Root Cause Identified,EIPD,YES,,,,Based on evidence obtained from failure analysis Electrical Overstress (EOS) is the most likely cause of the Electrically Induced Physical Damage (EIPD). TI has confirmed that leakage testing is performed at the end of the last test insertion for this TI device and as a result EOS damage that occurred at TI is judged to be unlikely
+21,1/3/25,Missing accessory,GGC3530B44032676,,,EFFA-1325,Done,Done,Expired,LUX-10765,No Failure Found,,YES,,,,Customer failed to return the unit or respond to CX requests
+22,2/3/25,Hardware issue,GGC3530B43972537,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+23,2/15/25,Hardware issue,GGC3530B44032724,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+24,3/2/25,Hardware issue,GGC3530B4496046,30W Outdoor PoE+ Power Adapter,,EFFA-1328,Done,Done,Info Received,,Won't do,,,,,,Customer failed to return the unit or respond to CX requests
+25,3/10/25,Poor performance,GGC3530B45162265,Goldfinch,,EFFA-1329,Done,Done,Delivered,,No Failure Found,,NO,NO,YES,,No failure found during in-house testing.
+26,3/7/25,Hardware issue,GGC3530B43972353,,NA,Won't do,NA,Info Received,,,,,,,,no EFFA filed customer never returned the unit,
+27,4/2/25,DAA,GGC3530B43671720,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+28,4/6/25,DAA,GGC3530B44910326,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+29,4/8/25,Poor performance,GGC3530B44032538,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+30,4/13/25,DAA,GGC3530B44031121,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+31,4/18/25,DAA,GGC3530B50322116,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+32,4/21/25,DAA,GGC3530B43971184,Goldfinch,,SAFETY-125,Done,Done,,Root Cause Identified,Exothermic event,,,,,,Both the RMA Snowbird device and 30W PSU (Goldfinch) are functional with EE values within spec and similar to KGU. The thermal damage appears to be from an external source or outlet issue rather than an internal PSU failure. The asymmetric damage pattern points to a Neutral connection issue at the outlet.
+33,4/25/25,DAA,GGC3530B44750842,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+34,4/28/25,Ethernet issues,GGC3530B44931771,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+35,4/29/25,DAA,GGC3530B44750975,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+36,5/8/25,DAA,GGC3530B44430558,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+37,5/14/25,DAA,GGC3530B45022264,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+38,5/16/25,DAA,GGC3530A43561864,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+39,5/16/25,DAA,GGC3530B43971876,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+40,5/19/25,Stuck flashing white,GGC3530B50430627,,NA,Won't do,NA,Info Received,,,,,,,,no EFFA filed heading to CEVA,
+41,5/21/25,DAA,GGC3530B44432775,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+42,5/21/25,DAA,GGC3530B44432238,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+43,5/23/25,DAA,GGC3530B44840200,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+44,5/24/25,DAA,GGC3530B45030622,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+45,5/26/25,DAA,GGC3530B44031984,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+46,5/27/25,DAA,GGC3530B45022192,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+47,5/29/25,DAA,GGC3530B45160348,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+48,5/30/25,DAA,GGC3530B50322146,Goldfinch,,EFFA-1357,Done,Done,Delivered,,Root Cause Identified,Liquid Ingress,NO,,,,Damage due to liquid ingress
+49,6/2/25,Stuck flashing white,GGC3530B44551498,,NA,To Do,To do,Info Received,,,,,,,,Need to file EFFA,
+50,6/4/25,DAA,GGC3530B50166460,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+51,6/7/25,DAA,GGC3530B45160246,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+52,6/9/25,DAA,GGC3530B44960108,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to LG,
+53,6/10/25,DAA,GGC3530B44570536,,NA,Won't do,NA,Info Received,,,,,,,,no EFFA filed delivered to CEVA,
+54,6/10/25,DAA,GGC3530B45130662,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+55,6/11/25,DAA,GGC3530B50166287,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+56,6/16/25,DAA,GGC3530B50164369,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+57,6/22/25,DAA,GGC3530B45021737,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+58,6/23/25,DAA,GGC3530A43472234,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+59,6/26/25,Power cable,GGC3530B43671110,,NA,Won't do,NA,Delivered,,,,,,,,no EFFA filed delivered to CEVA,
+60,7/21/25,DAA,GGC3530B45161265,Unknown,,EFFA-1360,Done,Done,Delivered,,Root Cause Identified,Liquid ingress,NO,,,,Damage due to liquid ingress.
+61,7/9/25,DAA,GGC3530B50170846 GGC3530B45262338,,,EFFA-1363,In Transit,On Queue,In Transit,,To Do,,,,,,
+62,,DAA,GGC3530A43472791,Goldfinch,,EFFA-1365,Done,Delivered,Delivered,,Root Cause Identified,Exothermic event,NO,,,,Snowbird unit works exothermal event for Goldfinch Goldfinch sent to Lab for further failure analysis. Failure happened due to Line and Neutral shorting of the external power outlet

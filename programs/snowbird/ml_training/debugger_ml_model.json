@@ -1,0 +1,17 @@
+{
+  "patterns": {
+    "PoE Power+TP1205": 1
+  },
+  "failure_counts": {
+    "VI:Liquid Ingress": 2,
+    "PoE Power": 1,
+    "TP1205": 1,
+    "TP579": 1
+  },
+  "subsystem_correlations": {
+    "System Power Budget": 1,
+    "MPM3690GQJ-Z PoE PD": 1,
+    "Buck 1 -> Miami IPQ5332": 1
+  },
+  "total_reports": 6
+}
