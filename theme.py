@@ -14,7 +14,20 @@ Import and call `inject_theme()` once at the top of every entry view, and use
 
 from __future__ import annotations
 
+import os
+
 import streamlit as st
+
+# Directory of this module, used to resolve bundled assets regardless of the
+# current working directory the app is launched from.
+_THEME_DIR = os.path.dirname(os.path.abspath(__file__))
+FAVICON_PATH = os.path.join(_THEME_DIR, "assets", "favicon.svg")
+
+
+def page_icon():
+    """Return the browser-tab icon: the bundled logo favicon if present,
+    otherwise a sensible emoji fallback."""
+    return FAVICON_PATH if os.path.exists(FAVICON_PATH) else "🔮"
 
 # --------------------------------------------------------------------------- #
 # Identity

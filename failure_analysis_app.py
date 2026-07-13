@@ -25,7 +25,7 @@ from theme import (
 # Page configuration
 st.set_page_config(
     page_title=f"{APP_NAME}",
-    page_icon="🔮",
+    page_icon=theme.page_icon(),
     layout="wide",
     initial_sidebar_state="expanded"
 )
