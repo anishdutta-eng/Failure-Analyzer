@@ -554,7 +554,7 @@ def main():
             return
 
         # Welcome screen
-        st.info("👈 Please upload a CSV file to begin analysis")
+        st.info("Please upload a CSV file from the sidebar to begin analysis")
         st.markdown(f"""
         ### Welcome to {APP_NAME}
         

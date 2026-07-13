@@ -26,31 +26,31 @@ APP_VERSION = "2.0.0"
 # --------------------------------------------------------------------------- #
 # Palette — Kiro purple with green + magenta accents
 # --------------------------------------------------------------------------- #
-PURPLE = "#8B6CFF"        # primary brand violet
-PURPLE_BRIGHT = "#A78BFA"  # lighter violet for highlights
-PURPLE_DEEP = "#6D28D9"    # deep violet for depth
-GREEN = "#34D399"          # emerald accent (success / positive)
-MAGENTA = "#E879F9"        # magenta accent (highlight / alert)
+PURPLE = "#7C3AED"         # primary brand violet (readable on white)
+PURPLE_BRIGHT = "#9F67FF"  # lighter violet for fills / highlights
+PURPLE_DEEP = "#5B21B6"    # deep violet for depth
+GREEN = "#059669"          # emerald accent (success / positive)
+MAGENTA = "#C026D3"        # magenta accent (highlight / alert)
 
-BG = "#2A2833"             # warm charcoal-grey canvas (lighter than before)
-BG_ELEV = "#31303C"        # slightly elevated canvas
-PANEL = "#38363F"          # cards / panels
-PANEL_2 = "#413F4A"        # nested panels / hovers
-BORDER = "#524F5E"         # subtle borders
-TEXT = "#F3F1F8"           # primary text
-TEXT_MUTED = "#C3BFD0"     # secondary text
-TEXT_FAINT = "#9A94A8"     # tertiary text
+BG = "#FFFFFF"             # white canvas
+BG_ELEV = "#F7F5FC"        # slightly tinted elevated canvas
+PANEL = "#F4F1FB"          # cards / panels (soft lavender white)
+PANEL_2 = "#ECE8F8"        # nested panels / hovers
+BORDER = "#E0DBF0"         # subtle borders
+TEXT = "#211B33"           # primary text (near-black, purple tint)
+TEXT_MUTED = "#5B5470"     # secondary text
+TEXT_FAINT = "#8B84A0"     # tertiary text
 
-# Semantic (kept close to accents so charts stay readable)
+# Semantic (kept readable on a light canvas)
 SUCCESS = GREEN
-WARNING = "#FBBF24"
-DANGER = "#F472B6"         # magenta-leaning danger, on-brand
+WARNING = "#D97706"        # amber-600
+DANGER = "#DB2777"         # pink-600
 
 # Ordered categorical palette for Plotly charts
-CHART_SEQUENCE = [PURPLE, GREEN, MAGENTA, PURPLE_BRIGHT, WARNING, "#22D3EE", "#F472B6", "#A3E635"]
+CHART_SEQUENCE = [PURPLE, GREEN, MAGENTA, PURPLE_BRIGHT, WARNING, "#0891B2", "#DB2777", "#65A30D"]
 
-# Gradient used for headings and the logo
-BRAND_GRADIENT = f"linear-gradient(100deg, {PURPLE_BRIGHT} 0%, {MAGENTA} 45%, {GREEN} 100%)"
+# Gradient used for headings and the logo (dark-purple, no pink)
+BRAND_GRADIENT = f"linear-gradient(100deg, {PURPLE_DEEP} 0%, {PURPLE} 100%)"
 
 
 # --------------------------------------------------------------------------- #
@@ -120,11 +120,23 @@ def _global_css() -> str:
       code, kbd, pre, .stCode, [data-testid="stDataFrame"] {{
         font-family: 'DM Mono', ui-monospace, monospace !important;
       }}
+      /* IMPORTANT: never override Material icon fonts. Forcing DM Sans on these
+         makes icons render as literal ligature text ("info", "keyboard_arrow_right")
+         that overlaps adjacent labels. Restore their icon fonts explicitly. */
+      span[data-testid="stIconMaterial"], [data-testid="stIconMaterial"],
+      [class*="material-symbols"], [class*="material-icons"],
+      .material-icons, .material-icons-outlined,
+      .material-symbols-rounded, .material-symbols-outlined,
+      [data-testid="stExpanderToggleIcon"] {{
+        font-family: 'Material Symbols Rounded', 'Material Symbols Outlined',
+                     'Material Icons Round', 'Material Icons' !important;
+        font-feature-settings: 'liga' !important;
+      }}
 
       .stApp {{
         background:
-          radial-gradient(1200px 600px at 15% -10%, {PURPLE_DEEP}22 0%, transparent 55%),
-          radial-gradient(900px 500px at 110% 0%, {MAGENTA}14 0%, transparent 50%),
+          radial-gradient(1200px 600px at 15% -10%, {PURPLE}12 0%, transparent 55%),
+          radial-gradient(900px 500px at 110% 0%, {MAGENTA}0d 0%, transparent 50%),
           {BG};
         color: {TEXT};
       }}
@@ -140,8 +152,8 @@ def _global_css() -> str:
       }}
       [data-testid="stSidebar"] * {{ color: {TEXT}; }}
 
-      /* Buttons (regular + form submit) */
-      .stButton > button, .stFormSubmitButton > button {{
+      /* Regular (secondary) buttons — light chip, dark text */
+      .stButton > button {{
         border-radius: 10px;
         border: 1px solid {BORDER};
         background: {PANEL_2};
@@ -149,23 +161,29 @@ def _global_css() -> str:
         font-weight: 600;
         transition: all .18s ease;
       }}
-      .stButton > button:hover, .stFormSubmitButton > button:hover {{
+      .stButton > button:hover {{
         border-color: {PURPLE};
-        color: #fff;
-        box-shadow: 0 4px 18px {PURPLE}33;
+        color: {PURPLE};
+        box-shadow: 0 4px 16px {PURPLE}26;
         transform: translateY(-1px);
       }}
-      .stButton > button p, .stFormSubmitButton > button p {{ color: inherit !important; }}
+      .stButton > button p {{ color: inherit !important; }}
+      /* Primary + form-submit buttons — purple gradient, white text */
       .stButton > button[kind="primary"],
       .stFormSubmitButton > button {{
-        background: linear-gradient(100deg, {PURPLE} 0%, {PURPLE_DEEP} 100%);
+        border-radius: 10px;
         border: none;
+        background: linear-gradient(100deg, {PURPLE} 0%, {PURPLE_DEEP} 100%);
         color: #fff;
+        font-weight: 600;
+        transition: all .18s ease;
       }}
+      .stButton > button[kind="primary"] p, .stFormSubmitButton > button p {{ color: #fff !important; }}
       .stButton > button[kind="primary"]:hover,
       .stFormSubmitButton > button:hover {{
         box-shadow: 0 6px 22px {PURPLE}55;
         color: #fff;
+        transform: translateY(-1px);
       }}
       .stDownloadButton > button {{
         border-radius: 10px;
@@ -186,7 +204,7 @@ def _global_css() -> str:
         border-left: 3px solid {PURPLE};
         border-radius: 12px;
         padding: 14px 16px;
-        box-shadow: 0 2px 14px #00000033;
+        box-shadow: 0 2px 12px {PURPLE}12;
       }}
       [data-testid="stMetricValue"] {{ color: {TEXT}; font-weight: 700; }}
       [data-testid="stMetricLabel"] {{ color: {TEXT_MUTED}; }}
@@ -226,8 +244,45 @@ def _global_css() -> str:
         color: {TEXT} !important;
       }}
 
+      /* File uploader — dark drop zone with legible text */
+      [data-testid="stFileUploader"] section,
+      [data-testid="stFileUploaderDropzone"] {{
+        background-color: {PANEL_2} !important;
+        border: 1.5px dashed {BORDER} !important;
+        border-radius: 12px !important;
+      }}
+      [data-testid="stFileUploader"] section:hover,
+      [data-testid="stFileUploaderDropzone"]:hover {{
+        border-color: {PURPLE} !important;
+      }}
+      [data-testid="stFileUploader"] label,
+      [data-testid="stFileUploaderDropzoneInstructions"],
+      [data-testid="stFileUploaderDropzoneInstructions"] * {{
+        color: {TEXT} !important;
+      }}
+      [data-testid="stFileUploaderDropzoneInstructions"] small,
+      [data-testid="stFileUploader"] small {{ color: {TEXT_MUTED} !important; }}
+      /* "Browse files" button inside the uploader */
+      [data-testid="stFileUploader"] button {{
+        background: {PANEL} !important;
+        color: {TEXT} !important;
+        border: 1px solid {BORDER} !important;
+        font-weight: 600 !important;
+      }}
+      [data-testid="stFileUploader"] button:hover {{
+        border-color: {PURPLE} !important;
+        color: {PURPLE} !important;
+      }}
+
+      /* Alerts (st.info / warning / success / error) — legible text on light canvas */
+      [data-testid="stAlert"], [data-testid="stAlert"] p,
+      [data-testid="stAlertContainer"], [data-testid="stAlertContainer"] p,
+      [data-testid="stNotification"] p {{
+        color: {TEXT} !important;
+      }}
+
       /* Links & horizontal rules */
-      a {{ color: {PURPLE_BRIGHT}; }}
+      a {{ color: {PURPLE}; }}
       hr {{ border-color: {BORDER}; }}
 
       /* --- Brand header --- */
@@ -237,7 +292,7 @@ def _global_css() -> str:
         background: linear-gradient(120deg, {PANEL} 0%, {BG_ELEV} 100%);
         border: 1px solid {BORDER};
         border-radius: 16px;
-        box-shadow: 0 6px 30px #00000040;
+        box-shadow: 0 6px 24px {PURPLE}14;
       }}
       .fa-header .fa-mark {{
         display: flex; align-items: center; justify-content: center;
@@ -256,8 +311,8 @@ def _global_css() -> str:
       .fa-ver {{
         margin-left: auto; align-self: flex-start;
         font-family: 'DM Mono', monospace !important;
-        font-size: .72rem; font-weight: 500; color: {PURPLE_BRIGHT};
-        background: {PURPLE}1f; border: 1px solid {PURPLE}55;
+        font-size: .72rem; font-weight: 600; color: {PURPLE_DEEP};
+        background: {PURPLE}14; border: 1px solid {PURPLE}3d;
         padding: 4px 10px; border-radius: 999px; white-space: nowrap;
       }}
     </style>

@@ -76,7 +76,7 @@ def _reports_to_dataframe(reports):
 def _weibull_analysis(df_reports):
     """Weibull analysis on failure data — models failure distribution over report sequence."""
     st.markdown("##### 📊 Weibull Failure Distribution Analysis")
-    st.markdown('<span style="color:#aaa;font-size:.9em;">Models how failures distribute across the test population. '
+    st.markdown('<span style="color:#5B5470;font-size:.9em;">Models how failures distribute across the test population. '
                 'β < 1 = infant mortality, β ≈ 1 = random, β > 1 = wear-out.</span>', unsafe_allow_html=True)
 
     # Get failure counts per report
@@ -120,19 +120,19 @@ def _weibull_analysis(df_reports):
 
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=x, y=pdf, mode="lines", name="PDF (Probability Density)",
-                                 line=dict(color="#8B6CFF", width=2)))
+                                 line=dict(color="#7C3AED", width=2)))
         fig.add_trace(go.Scatter(x=x, y=cdf, mode="lines", name="CDF (Cumulative Failure)",
-                                 line=dict(color="#E879F9", width=2), yaxis="y2"))
+                                 line=dict(color="#C026D3", width=2), yaxis="y2"))
         fig.add_trace(go.Histogram(x=fail_rates, nbinsx=15, name="Observed Fail Rates",
-                                   opacity=0.35, marker_color="#34D399", yaxis="y"))
+                                   opacity=0.35, marker_color="#059669", yaxis="y"))
         fig.update_layout(
             title=f"Weibull Distribution (β={shape:.2f}, η={scale:.4f})",
             xaxis_title="Failure Rate per Report",
             yaxis_title="Density / Count",
             yaxis2=dict(title="Cumulative Probability", overlaying="y", side="right", range=[0, 1]),
-            template="plotly_dark", height=400,
+            template="plotly_white", height=400,
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(family="DM Sans, sans-serif", color="#ECE8FB"),
+            font=dict(family="DM Sans, sans-serif", color="#211B33"),
             legend=dict(x=0.6, y=0.95))
         st.plotly_chart(fig, use_container_width=True)
 
@@ -149,7 +149,7 @@ def _weibull_analysis(df_reports):
 def _pareto_analysis(df_reports):
     """Pareto analysis — identify the vital few failure modes."""
     st.markdown("##### 📊 Pareto Analysis (80/20 Rule)")
-    st.markdown('<span style="color:#aaa;font-size:.9em;">Identifies the vital few test points and subsystems causing the majority of failures.</span>', unsafe_allow_html=True)
+    st.markdown('<span style="color:#5B5470;font-size:.9em;">Identifies the vital few test points and subsystems causing the majority of failures.</span>', unsafe_allow_html=True)
 
     fails = df_reports[df_reports["status"] == "fail"]
     if len(fails) < 1:
@@ -162,19 +162,19 @@ def _pareto_analysis(df_reports):
 
     fig = go.Figure()
     fig.add_trace(go.Bar(x=tp_counts["tp"], y=tp_counts["count"], name="Failure Count",
-                         marker_color="#8B6CFF", opacity=0.85))
+                         marker_color="#7C3AED", opacity=0.85))
     fig.add_trace(go.Scatter(x=tp_counts["tp"], y=tp_counts["cumulative_pct"], name="Cumulative %",
-                             mode="lines+markers", line=dict(color="#E879F9", width=2), yaxis="y2"))
+                             mode="lines+markers", line=dict(color="#C026D3", width=2), yaxis="y2"))
     fig.add_shape(type="line", x0=0, x1=1, y0=80, y1=80, xref="paper", yref="y2",
-                  line=dict(color="#A99FC9", width=1, dash="dash"))
+                  line=dict(color="#5B5470", width=1, dash="dash"))
     fig.add_annotation(x=1, y=80, text="80%", showarrow=False, xref="paper", yref="y2",
-                       font=dict(color="#A99FC9", size=10), xanchor="left")
+                       font=dict(color="#5B5470", size=10), xanchor="left")
     fig.update_layout(title="Pareto: Failures by Test Point", xaxis_title="Test Point",
                       yaxis_title="Failure Count",
                       yaxis2=dict(title="Cumulative %", overlaying="y", side="right", range=[0, 105]),
-                      template="plotly_dark", height=400,
+                      template="plotly_white", height=400,
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
+                      font=dict(family="DM Sans, sans-serif", color="#211B33"))
     st.plotly_chart(fig, use_container_width=True)
 
     # 80/20 insight
@@ -195,16 +195,16 @@ def _pareto_analysis(df_reports):
     fig2.update_layout(title="Pareto: Failures by Subsystem", xaxis_title="Subsystem",
                        yaxis_title="Failure Count",
                        yaxis2=dict(title="Cumulative %", overlaying="y", side="right", range=[0, 105]),
-                       template="plotly_dark", height=400,
+                       template="plotly_white", height=400,
                        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                       font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
+                       font=dict(family="DM Sans, sans-serif", color="#211B33"))
     st.plotly_chart(fig2, use_container_width=True)
 
 
 def _correlation_heatmap(df_reports):
     """Correlation heatmap — which TPs tend to fail together."""
     st.markdown("##### 🔥 Failure Correlation Heatmap")
-    st.markdown('<span style="color:#aaa;font-size:.9em;">Shows which test points tend to fail together, revealing shared root causes or cascading failures.</span>', unsafe_allow_html=True)
+    st.markdown('<span style="color:#5B5470;font-size:.9em;">Shows which test points tend to fail together, revealing shared root causes or cascading failures.</span>', unsafe_allow_html=True)
 
     # Build a binary matrix: report x TP (1=fail, 0=not fail)
     fails = df_reports[df_reports["status"] == "fail"]
@@ -224,12 +224,12 @@ def _correlation_heatmap(df_reports):
     corr = pivot[fail_tps].corr()
 
     fig = px.imshow(corr, text_auto=".2f",
-                    color_continuous_scale=[[0.0, "#34D399"], [0.5, "#160F2B"], [1.0, "#E879F9"]],
+                    color_continuous_scale=[[0.0, "#059669"], [0.5, "#F4F1FB"], [1.0, "#C026D3"]],
                     title="TP Failure Co-occurrence Correlation",
                     labels=dict(color="Correlation"))
-    fig.update_layout(template="plotly_dark", height=500,
+    fig.update_layout(template="plotly_white", height=500,
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
+                      font=dict(family="DM Sans, sans-serif", color="#211B33"))
     st.plotly_chart(fig, use_container_width=True)
 
     # Highlight strong correlations
@@ -258,11 +258,11 @@ def _phase_failure_distribution(df_reports):
     phase_counts["label"] = phase_counts.apply(lambda r: f"P{int(r['phase'])}: {r['phase_name']}", axis=1)
 
     fig = px.bar(phase_counts, x="label", y="count", color="count",
-                 color_continuous_scale=[[0.0, "#6D28D9"], [0.5, "#8B6CFF"], [1.0, "#E879F9"]],
+                 color_continuous_scale=[[0.0, "#6D28D9"], [0.5, "#7C3AED"], [1.0, "#C026D3"]],
                  title="Failures by Phase")
-    fig.update_layout(template="plotly_dark", height=350, xaxis_title="Phase", yaxis_title="Failure Count",
+    fig.update_layout(template="plotly_white", height=350, xaxis_title="Phase", yaxis_title="Failure Count",
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      font=dict(family="DM Sans, sans-serif", color="#ECE8FB"), coloraxis_showscale=False)
+                      font=dict(family="DM Sans, sans-serif", color="#211B33"), coloraxis_showscale=False)
     st.plotly_chart(fig, use_container_width=True)
 
     # Subsystem sunburst
@@ -271,10 +271,10 @@ def _phase_failure_distribution(df_reports):
         fig2 = px.sunburst(sub_data, path=["phase_name", "subsystem", "tp"], values="count",
                            title="Failure Hierarchy: Phase → Subsystem → Test Point",
                            color="count",
-                           color_continuous_scale=[[0.0, "#6D28D9"], [0.5, "#8B6CFF"], [1.0, "#E879F9"]])
-        fig2.update_layout(template="plotly_dark", height=500,
+                           color_continuous_scale=[[0.0, "#6D28D9"], [0.5, "#7C3AED"], [1.0, "#C026D3"]])
+        fig2.update_layout(template="plotly_white", height=500,
                            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                           font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
+                           font=dict(family="DM Sans, sans-serif", color="#211B33"))
         st.plotly_chart(fig2, use_container_width=True)
 
 
@@ -313,18 +313,18 @@ def _trend_analysis(df_reports, reports):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=df_trend["date"], y=df_trend["fail_rate"],
                              mode="lines+markers", name="Fail Rate",
-                             line=dict(color="#8B6CFF", width=2),
-                             marker=dict(size=8, color="#E879F9")))
+                             line=dict(color="#7C3AED", width=2),
+                             marker=dict(size=8, color="#C026D3")))
     # Rolling average if enough data
     if len(df_trend) >= 5:
         df_trend["rolling_avg"] = df_trend["fail_rate"].rolling(window=3, min_periods=1).mean()
         fig.add_trace(go.Scatter(x=df_trend["date"], y=df_trend["rolling_avg"],
                                  mode="lines", name="3-Report Moving Avg",
-                                 line=dict(color="#34D399", width=2, dash="dash")))
+                                 line=dict(color="#059669", width=2, dash="dash")))
     fig.update_layout(title="Failure Rate Trend", xaxis_title="Test Date",
-                      yaxis_title="Failure Rate", template="plotly_dark", height=350,
+                      yaxis_title="Failure Rate", template="plotly_white", height=350,
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      font=dict(family="DM Sans, sans-serif", color="#ECE8FB"),
+                      font=dict(family="DM Sans, sans-serif", color="#211B33"),
                       yaxis=dict(range=[0, max(df_trend["fail_rate"].max() * 1.2, 0.1)]))
     st.plotly_chart(fig, use_container_width=True)
 
@@ -364,13 +364,13 @@ def _dfmea_rpn_analysis(reports):
 
     fig = go.Figure()
     fig.add_trace(go.Bar(x=agg["subsystem"], y=agg["avg_rpn"], name="Avg RPN",
-                         marker_color="#8B6CFF", opacity=0.85))
+                         marker_color="#7C3AED", opacity=0.85))
     fig.add_trace(go.Bar(x=agg["subsystem"], y=agg["max_rpn"], name="Max RPN",
-                         marker_color="#E879F9", opacity=0.5))
+                         marker_color="#C026D3", opacity=0.5))
     fig.update_layout(title="RPN by Subsystem", xaxis_title="Subsystem",
-                      yaxis_title="RPN", template="plotly_dark", height=400, barmode="overlay",
+                      yaxis_title="RPN", template="plotly_white", height=400, barmode="overlay",
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
+                      font=dict(family="DM Sans, sans-serif", color="#211B33"))
     st.plotly_chart(fig, use_container_width=True)
 
     # RPN table
@@ -403,10 +403,10 @@ def _vi_analysis(reports):
     counts.columns = ["Finding", "Count"]
 
     fig = px.pie(counts, values="Count", names="Finding", title="VI Findings Distribution",
-                 color_discrete_sequence=["#8B6CFF", "#34D399", "#E879F9", "#A78BFA", "#FBBF24", "#22D3EE"])
-    fig.update_layout(template="plotly_dark", height=350,
+                 color_discrete_sequence=["#7C3AED", "#059669", "#C026D3", "#A78BFA", "#FBBF24", "#22D3EE"])
+    fig.update_layout(template="plotly_white", height=350,
                       paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-                      font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
+                      font=dict(family="DM Sans, sans-serif", color="#211B33"))
     st.plotly_chart(fig, use_container_width=True)
 
     # Correlation: VI finding vs verdict
@@ -419,10 +419,10 @@ def _vi_analysis(reports):
 def render_analytics_ui():
     """Main entry point for the analytics dashboard."""
     st.markdown('<div style="text-align:center;font-size:1.7em;font-weight:700;margin-bottom:4px;'
-                'background:linear-gradient(100deg,#A78BFA 0%,#E879F9 55%,#34D399 100%);'
+                'background:linear-gradient(100deg,#5B21B6 0%,#7C3AED 100%);'
                 '-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'
                 '📊 Failure Analysis Statistical Dashboard</div>', unsafe_allow_html=True)
-    st.markdown('<div style="text-align:center;color:#A99FC9;margin-bottom:16px;">'
+    st.markdown('<div style="text-align:center;color:#5B5470;margin-bottom:16px;">'
                 'Weibull, Pareto, Correlation, Trend & RPN analysis from accumulated debug reports</div>',
                 unsafe_allow_html=True)
 

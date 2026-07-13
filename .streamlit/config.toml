@@ -3,11 +3,11 @@
 # theme.inject_theme(); these values make Streamlit's native chrome match.
 
 [theme]
-base = "dark"
-primaryColor = "#8B6CFF"          # Kiro purple
-backgroundColor = "#2A2833"       # warm charcoal-grey canvas
-secondaryBackgroundColor = "#38363F"  # panels / sidebar
-textColor = "#F3F1F8"
+base = "light"
+primaryColor = "#7C3AED"          # Kiro purple
+backgroundColor = "#FFFFFF"       # white canvas
+secondaryBackgroundColor = "#F4F1FB"  # panels / sidebar (soft lavender white)
+textColor = "#211B33"
 font = "sans serif"
 
 [browser]

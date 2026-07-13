@@ -462,36 +462,36 @@ FAULT_TREES = {
 }
 
 CSS = """<style>
-.ph{background:linear-gradient(135deg,#38363F,#31303C);color:#F3F1F8;padding:12px 18px;border-radius:10px;margin:10px 0 6px;font-size:1.1em;font-weight:600;border-left:4px solid #8B6CFF}
-.ph-c{border-left:4px solid #E879F9}
-.tp-pass{background:#2b4a3f;border-left:4px solid #34D399;padding:8px 14px;border-radius:8px;margin:4px 0;color:#c7f0e0;font-family:'DM Mono',monospace}
-.tp-fail{background:#4a2c3c;border-left:4px solid #F472B6;padding:8px 14px;border-radius:8px;margin:4px 0;color:#f7d3e4;font-family:'DM Mono',monospace}
-.tp-warn{background:#4a4127;border-left:4px solid #FBBF24;padding:8px 14px;border-radius:8px;margin:4px 0;color:#fbeccb;font-family:'DM Mono',monospace}
-.tp-skip{background:#38363F;border-left:4px solid #524F5E;padding:8px 14px;border-radius:8px;margin:4px 0;color:#9A94A8;font-family:'DM Mono',monospace}
-.tp-monitor{background:#4a4127;border-left:4px solid #e67e22;padding:8px 14px;border-radius:8px;margin:4px 0;color:#fbeccb;font-family:'DM Mono',monospace}
+.ph{background:linear-gradient(135deg,#F4F1FB,#ECE8F8);color:#211B33;padding:12px 18px;border-radius:10px;margin:10px 0 6px;font-size:1.1em;font-weight:600;border-left:4px solid #7C3AED}
+.ph-c{border-left:4px solid #C026D3}
+.tp-pass{background:#E7F6F0;border-left:4px solid #059669;padding:8px 14px;border-radius:8px;margin:4px 0;color:#065F46;font-family:'DM Mono',monospace}
+.tp-fail{background:#FCE7F3;border-left:4px solid #DB2777;padding:8px 14px;border-radius:8px;margin:4px 0;color:#9D174D;font-family:'DM Mono',monospace}
+.tp-warn{background:#FEF3C7;border-left:4px solid #D97706;padding:8px 14px;border-radius:8px;margin:4px 0;color:#92400E;font-family:'DM Mono',monospace}
+.tp-skip{background:#F1EFF7;border-left:4px solid #E0DBF0;padding:8px 14px;border-radius:8px;margin:4px 0;color:#5B5470;font-family:'DM Mono',monospace}
+.tp-monitor{background:#FEF3C7;border-left:4px solid #EA580C;padding:8px 14px;border-radius:8px;margin:4px 0;color:#9A3412;font-family:'DM Mono',monospace}
 .led{display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:8px;vertical-align:middle}
-.led-off{background:#4a4858;box-shadow:0 0 2px #333}
+.led-off{background:#C9C4D6;box-shadow:0 0 2px #b0aabf}
 .led-blue{background:#3498db;box-shadow:0 0 8px #3498db,0 0 16px #3498db55}
-.led-green{background:#34D399;box-shadow:0 0 8px #34D399,0 0 16px #34D39955}
+.led-green{background:#059669;box-shadow:0 0 8px #059669,0 0 16px #05966955}
 .led-red{background:#e74c3c;box-shadow:0 0 8px #e74c3c,0 0 16px #e74c3c55}
 .led-orange{background:#e67e22;box-shadow:0 0 8px #e67e22,0 0 16px #e67e2255}
 .vb{padding:16px;border-radius:12px;margin:12px 0;font-size:1.05em}
-.vb-p{background:linear-gradient(135deg,#2b4a3f,#33564a);border:2px solid #34D399;color:#c7f0e0}
-.vb-f{background:linear-gradient(135deg,#4a2c3c,#563048);border:2px solid #F472B6;color:#f7d3e4}
+.vb-p{background:linear-gradient(135deg,#E7F6F0,#D7F0E5);border:2px solid #059669;color:#065F46}
+.vb-f{background:linear-gradient(135deg,#FCE7F3,#FBD8EA);border:2px solid #DB2777;color:#9D174D}
 .st{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:.9em}
-.st th{background:#413F4A;color:#F3F1F8;padding:8px 12px;text-align:left;border-bottom:2px solid #8B6CFF}
-.st td{padding:6px 12px;border-bottom:1px solid #524F5E}
-.st tr.rp td{color:#34D399} .st tr.rf td{color:#F472B6;font-weight:bold} .st tr.rw td{color:#FBBF24} .st tr.rs td{color:#9A94A8} .st tr.rm td{color:#e67e22}
-.dd{background:#38363F;border:1px solid #524F5E;border-radius:10px;padding:14px;margin:8px 0;color:#d8d3e4}
+.st th{background:#ECE8F8;color:#211B33;padding:8px 12px;text-align:left;border-bottom:2px solid #7C3AED}
+.st td{padding:6px 12px;border-bottom:1px solid #E0DBF0;color:#211B33}
+.st tr.rp td{color:#059669} .st tr.rf td{color:#DB2777;font-weight:bold} .st tr.rw td{color:#B45309} .st tr.rs td{color:#8B84A0} .st tr.rm td{color:#C2410C}
+.dd{background:#F4F1FB;border:1px solid #E0DBF0;border-radius:10px;padding:14px;margin:8px 0;color:#3B3550}
 .dd ol{margin:6px 0;padding-left:20px} .dd li{margin:4px 0;line-height:1.5}
 .phase-bar{display:flex;gap:4px;margin:10px 0 16px;flex-wrap:wrap}
-.phase-pill{flex:1;min-width:90px;text-align:center;padding:8px 4px;border-radius:10px;font-size:.75em;font-weight:600;font-family:'DM Mono',monospace;border:2px solid #524F5E;transition:all .3s}
-.pp-gray{background:#38363F;color:#9A94A8;border-color:#524F5E}
-.pp-blue{background:#413F4A;color:#A78BFA;border-color:#8B6CFF}
-.pp-green{background:#2b4a3f;color:#34D399;border-color:#34D399}
-.pp-red{background:#4a2c3c;color:#F472B6;border-color:#F472B6}
-.pp-orange{background:#4a4127;color:#e67e22;border-color:#e67e22}
-.vi-box{background:linear-gradient(135deg,#38363F,#31303C);border:2px solid #524F5E;border-radius:12px;padding:16px;margin:10px 0}
+.phase-pill{flex:1;min-width:90px;text-align:center;padding:8px 4px;border-radius:10px;font-size:.75em;font-weight:600;font-family:'DM Mono',monospace;border:2px solid #E0DBF0;transition:all .3s}
+.pp-gray{background:#F1EFF7;color:#8B84A0;border-color:#E0DBF0}
+.pp-blue{background:#EDE9FB;color:#7C3AED;border-color:#7C3AED}
+.pp-green{background:#E7F6F0;color:#059669;border-color:#059669}
+.pp-red{background:#FCE7F3;color:#DB2777;border-color:#DB2777}
+.pp-orange{background:#FEEAD9;color:#C2410C;border-color:#EA580C}
+.vi-box{background:linear-gradient(135deg,#F4F1FB,#ECE8F8);border:2px solid #E0DBF0;border-radius:12px;padding:16px;margin:10px 0}
 </style>"""
 
 
@@ -531,8 +531,8 @@ def _tp_row(tp, val, status, msg):
     ic = {"pass":"✅","fail":"❌","warn":"⚠️","skip":"⬜","monitor":"🟠"}.get(status,"⬜")
     step = tp.get("step", "")
     loc = tp.get("loc", "")
-    step_tag = f'<span style="background:#0f3460;color:#fff;padding:1px 6px;border-radius:10px;font-size:.8em;margin-right:4px;">#{step}</span>' if step else ""
-    loc_tag = f'<br><span style="font-size:.75em;color:#888;">📍 {loc}</span>' if loc else ""
+    step_tag = f'<span style="background:#7C3AED;color:#fff;padding:1px 6px;border-radius:10px;font-size:.8em;margin-right:4px;">#{step}</span>' if step else ""
+    loc_tag = f'<br><span style="font-size:.75em;color:#5B5470;">📍 {loc}</span>' if loc else ""
     return (f'<div class="{c}">{step_tag}{ic} <b>{tp["tp"]}</b> {tp["name"]}'
             f' | KGU: {n} {tp["unit"]} | DUT: <b>{d}</b> {tp["unit"]}'
             f' | [{tp["lsl"]} - {tp["usl"]}] &rarr; <b>{msg}</b>{loc_tag}</div>')
@@ -582,24 +582,30 @@ def _render_board_map():
     circles = ""
     labels = ""
     for step, tp_name, signal, x, y, group in tp_positions:
-        col = colors.get(group, "#888")
-        circles += f'<circle cx="{x}" cy="{y}" r="14" fill="{col}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>'
-        circles += f'<text x="{x}" y="{y+5}" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="monospace">{step}</text>'
-        # Label offset
+        col = colors.get(group, "#8B84A0")
+        circles += f'<circle cx="{x}" cy="{y}" r="14" fill="{col}" stroke="#fff" stroke-width="2"/>'
+        circles += f'<text x="{x}" y="{y+4}" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold" font-family="DM Mono, monospace">{step}</text>'
+        # Place the TP name label beside the circle, clear of the node, with a
+        # small readable offset. Left-half labels go right, right-half go left.
         lx = x + 20 if x < 500 else x - 20
         anchor = "start" if x < 500 else "end"
-        labels += f'<text x="{lx}" y="{y+4}" text-anchor="{anchor}" fill="#ccc" font-size="9" font-family="monospace">{tp_name}</text>'
+        labels += (f'<text x="{lx}" y="{y+4}" text-anchor="{anchor}" fill="#3B3550" '
+                   f'font-size="10" font-weight="600" font-family="DM Mono, monospace" '
+                   f'paint-order="stroke" stroke="#FFFFFF" stroke-width="3" '
+                   f'stroke-linejoin="round">{tp_name}</text>')
 
-    svg = f'''<svg viewBox="0 0 1000 760" style="width:100%;max-width:960px;background:#1a1a2e;border-radius:10px;border:1px solid #0f3460;">
-    <rect x="30" y="30" width="940" height="700" rx="12" fill="#222" stroke="#444" stroke-width="1"/>
-    <text x="500" y="22" text-anchor="middle" fill="#666" font-size="11" font-family="monospace">PCB — TOP VIEW (RJ45 at bottom-left)</text>
+    # Region titles are anchored to the top-left corner of each region box so
+    # they never sit under a centered test-point node (fixes prior overlap).
+    svg = f'''<svg viewBox="0 0 1000 760" style="width:100%;max-width:960px;background:#F4F1FB;border-radius:10px;border:1px solid #E0DBF0;">
+    <rect x="30" y="30" width="940" height="700" rx="12" fill="#FBFAFE" stroke="#E0DBF0" stroke-width="1"/>
+    <text x="500" y="22" text-anchor="middle" fill="#5B5470" font-size="11" font-weight="600" font-family="DM Mono, monospace">PCB — TOP VIEW (RJ45 at bottom-left)</text>
     <!-- Board outline regions -->
-    <rect x="40" y="40" width="200" height="300" rx="4" fill="none" stroke="#444" stroke-width="0.5" stroke-dasharray="4"/>
-    <text x="140" y="55" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">PoE / Power</text>
-    <rect x="350" y="150" width="300" height="350" rx="4" fill="none" stroke="#444" stroke-width="0.5" stroke-dasharray="4"/>
-    <text x="500" y="165" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">Miami SoC + DDR4</text>
-    <rect x="700" y="100" width="260" height="400" rx="4" fill="none" stroke="#444" stroke-width="0.5" stroke-dasharray="4"/>
-    <text x="830" y="115" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">Waikiki / RF / Analog</text>
+    <rect x="40" y="40" width="200" height="300" rx="6" fill="#7C3AED08" stroke="#C9C4D6" stroke-width="0.8" stroke-dasharray="5"/>
+    <text x="48" y="56" text-anchor="start" fill="#8B84A0" font-size="9" font-weight="600" font-family="DM Mono, monospace">PoE / Power</text>
+    <rect x="350" y="150" width="300" height="350" rx="6" fill="#7C3AED08" stroke="#C9C4D6" stroke-width="0.8" stroke-dasharray="5"/>
+    <text x="358" y="166" text-anchor="start" fill="#8B84A0" font-size="9" font-weight="600" font-family="DM Mono, monospace">Miami SoC + DDR4</text>
+    <rect x="700" y="100" width="260" height="400" rx="6" fill="#7C3AED08" stroke="#C9C4D6" stroke-width="0.8" stroke-dasharray="5"/>
+    <text x="708" y="116" text-anchor="start" fill="#8B84A0" font-size="9" font-weight="600" font-family="DM Mono, monospace">Waikiki / RF / Analog</text>
     {circles}
     {labels}
     </svg>'''
@@ -608,7 +614,7 @@ def _render_board_map():
 
     # Legend
     legend_items = " ".join(
-        f'<span style="display:inline-block;margin:2px 8px;"><span style="display:inline-block;width:12px;height:12px;background:{c};border-radius:50%;margin-right:4px;vertical-align:middle;"></span><span style="color:#ccc;font-size:.8em;">{g}</span></span>'
+        f'<span style="display:inline-block;margin:2px 8px;"><span style="display:inline-block;width:12px;height:12px;background:{c};border-radius:50%;margin-right:4px;vertical-align:middle;"></span><span style="color:#5B5470;font-size:.8em;">{g}</span></span>'
         for g, c in colors.items()
     )
     st.markdown(f'<div style="text-align:center;margin:6px 0;">{legend_items}</div>', unsafe_allow_html=True)
@@ -635,7 +641,7 @@ def _render_component_diagnostics(diagnostics):
     st.caption("Ranked by likelihood. Stop at the first failing check — that's your faulty component.")
     for i, d in enumerate(diagnostics, 1):
         prio = d.get("priority", "Medium")
-        prio_color = {"High": "#e74c3c", "Medium": "#f39c12", "Low": "#3498db"}.get(prio, "#888")
+        prio_color = {"High": "#DB2777", "Medium": "#D97706", "Low": "#7C3AED"}.get(prio, "#8B84A0")
         ref = d.get("ref", "")
         comp = d.get("component", "")
         loc = d.get("location", "")
@@ -644,26 +650,26 @@ def _render_component_diagnostics(diagnostics):
         if_fail = d.get("if_fail", "")
         tools = d.get("tools", "")
 
-        header = f'<div style="background:#1a1a2e;border-left:4px solid {prio_color};border-radius:6px;padding:10px 14px;margin:8px 0;">'
-        header += f'<div style="font-weight:700;color:#e0e0e0;font-size:1.05em;">#{i} &nbsp; {ref} — {comp} '
+        header = f'<div style="background:#F4F1FB;border:1px solid #E0DBF0;border-left:4px solid {prio_color};border-radius:8px;padding:10px 14px;margin:8px 0;">'
+        header += f'<div style="font-weight:700;color:#211B33;font-size:1.05em;">#{i} &nbsp; {ref} — {comp} '
         header += f'<span style="float:right;font-size:.8em;color:{prio_color};font-weight:600;">{prio.upper()} PRIORITY</span></div>'
         if loc:
-            header += f'<div style="color:#aaa;font-size:.85em;margin:4px 0 8px 0;">📍 {loc}</div>'
+            header += f'<div style="color:#5B5470;font-size:.85em;margin:4px 0 8px 0;">📍 {loc}</div>'
         st.markdown(header, unsafe_allow_html=True)
 
         cols = st.columns([2, 2, 1])
         with cols[0]:
             st.markdown(f"**Probe / Check**")
-            st.markdown(f"<span style='color:#bbb;font-size:.9em'>{check}</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:#3B3550;font-size:.9em'>{check}</span>", unsafe_allow_html=True)
         with cols[1]:
             st.markdown(f"**Expected (KGU)**")
-            st.markdown(f"<span style='color:#27ae60;font-size:.9em;font-family:monospace'>{expected}</span>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:#059669;font-size:.9em;font-family:\"DM Mono\",monospace'>{expected}</span>", unsafe_allow_html=True)
         with cols[2]:
             if tools:
                 st.markdown(f"**Tool**")
-                st.markdown(f"<span style='color:#888;font-size:.85em'>{tools}</span>", unsafe_allow_html=True)
+                st.markdown(f"<span style='color:#5B5470;font-size:.85em'>{tools}</span>", unsafe_allow_html=True)
         if if_fail:
-            st.markdown(f'<div style="background:#2a1a1a;border-left:3px solid #c0392b;padding:6px 10px;margin:6px 0;border-radius:4px;font-size:.85em;color:#e0c4c4;"><b>❌ If this fails:</b> {if_fail}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="background:#FCE7F3;border-left:3px solid #DB2777;padding:6px 10px;margin:6px 0;border-radius:6px;font-size:.85em;color:#9D174D;"><b>❌ If this fails:</b> {if_fail}</div>', unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -801,7 +807,7 @@ def _full_summary(readings):
         if r["Phase"] != cp:
             cp = r["Phase"]
             pi = PHASES[cp]
-            rh += f'<tr><td colspan="8" style="background:#0f3460;color:#e0e0e0;font-weight:bold;padding:8px;">{pi["icon"]} Phase {cp}: {pi["name"]}</td></tr>'
+            rh += f'<tr><td colspan="8" style="background:#ECE8F8;color:#211B33;font-weight:bold;padding:8px;border-left:3px solid #7C3AED;">{pi["icon"]} Phase {cp}: {pi["name"]}</td></tr>'
         rc = "r" + r["Status"][0].lower()
         ic = {"PASS":"✅","FAIL":"❌","WARN":"⚠️","SKIP":"⬜","MONITOR":"🟠"}.get(r["Status"],"⬜")
         rh += f'<tr class="{rc}"><td>{r["TP"]}</td><td>{r["Rail"]}</td><td>{r["LSL"]}</td><td>{r["Nom"]}</td><td>{r["USL"]}</td><td><b>{r["DUT"]}</b></td><td>{r["Unit"]}</td><td>{ic} {r["Detail"]}</td></tr>'
@@ -1089,8 +1095,8 @@ def _get_ml_insights():
 def _render_report_ui(report):
     """Render the Failure Analysis report in the UI."""
     st.markdown("---")
-    st.markdown(f'<div style="text-align:center;font-size:1.3em;font-weight:700;color:#e0e0e0;margin:10px 0;">📋 Failure Analysis Report</div>', unsafe_allow_html=True)
-    st.markdown(f'<div style="text-align:center;color:#888;margin-bottom:12px;">Report ID: {report["report_id"]}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="text-align:center;font-size:1.3em;font-weight:700;color:#211B33;margin:10px 0;">📋 Failure Analysis Report</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="text-align:center;color:#5B5470;margin-bottom:12px;">Report ID: {report["report_id"]}</div>', unsafe_allow_html=True)
 
     # Header info
     c1, c2, c3, c4 = st.columns(4)
@@ -1176,7 +1182,7 @@ def render_debugger_ui():
     prog = get_selected_program() or "PCB"
     st.markdown(
         f'<div style="text-align:center;font-size:1.7em;font-weight:700;margin-bottom:4px;'
-        f'background:linear-gradient(100deg,#A78BFA 0%,#E879F9 55%,#34D399 100%);'
+        f'background:linear-gradient(100deg,#5B21B6 0%,#7C3AED 100%);'
         f'-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'
         f'{prog} PCB Interactive Debugger</div>',
         unsafe_allow_html=True,
