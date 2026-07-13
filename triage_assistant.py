@@ -821,7 +821,13 @@ class TriageAssistant:
 
 def render_triage_ui(df):
     """Render the triage assistant UI"""
-    st.header("🔧 Intelligent Triage Assistant")
+    st.markdown(
+        '<div style="font-size:1.7em;font-weight:700;margin-bottom:2px;'
+        'background:linear-gradient(100deg,#A78BFA 0%,#E879F9 55%,#34D399 100%);'
+        '-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'
+        '🔧 Intelligent Triage Assistant</div>',
+        unsafe_allow_html=True,
+    )
     prog = get_selected_program() or "Snowbird"
     st.caption(f"Technical failure analysis for {prog}")
     
@@ -959,8 +965,10 @@ def render_triage_ui(df):
                         y='Count',
                         title='Top 10 Observed Failure Modes',
                         color='Count',
-                        color_continuous_scale='Reds')
-            fig.update_layout(xaxis_tickangle=-45)
+                        color_continuous_scale=[[0.0, "#6D28D9"], [0.5, "#8B6CFF"], [1.0, "#E879F9"]])
+            fig.update_layout(xaxis_tickangle=-45, coloraxis_showscale=False,
+                              paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+                              font=dict(family="DM Sans, sans-serif", color="#ECE8FB"))
             st.plotly_chart(fig, use_container_width=True)
             
             # Show table

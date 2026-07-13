@@ -1,0 +1,14 @@
+# Failure Analyzer base theme.
+# Detailed styling (DM Sans font + full palette) is applied at runtime by
+# theme.inject_theme(); these values make Streamlit's native chrome match.
+
+[theme]
+base = "dark"
+primaryColor = "#8B6CFF"          # Kiro purple
+backgroundColor = "#2A2833"       # warm charcoal-grey canvas
+secondaryBackgroundColor = "#38363F"  # panels / sidebar
+textColor = "#F3F1F8"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false

@@ -15,33 +15,23 @@ from program_config import (
     get_program_list, register_program, get_selected_program,
     set_selected_program, load_registry, get_program_dir
 )
+import theme
+from theme import (
+    PURPLE, PURPLE_BRIGHT, PURPLE_DEEP, GREEN, MAGENTA, WARNING,
+    PANEL, BG_ELEV, BORDER, TEXT, TEXT_MUTED, TEXT_FAINT,
+    CHART_SEQUENCE, CONTINUOUS_SCALE, APP_NAME, APP_VERSION,
+)
 
 # Page configuration
 st.set_page_config(
-    page_title="Failure Analysis Pattern Recognition Tool",
-    page_icon="🔍",
+    page_title=f"{APP_NAME}",
+    page_icon="🔮",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
-st.markdown("""
-    <style>
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
-        text-align: center;
-        padding: 1rem 0;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        border-left: 4px solid #1f77b4;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# Global theme (DM Sans + Kiro-purple palette). Runs on every rerun.
+theme.inject_theme()
 
 @st.cache_data(show_spinner=False)
 def _load_dashboard_dataframe(file_bytes):
@@ -91,10 +81,10 @@ class FailureAnalysisTool:
             labels={'x': 'Return Reason', 'y': 'Count'},
             title=f'{self.program_name} - Return Reasons Distribution',
             color=reason_counts.values,
-            color_continuous_scale='Blues'
+            color_continuous_scale=CONTINUOUS_SCALE
         )
-        fig.update_layout(showlegend=False, xaxis_tickangle=-45)
-        return fig
+        fig.update_layout(showlegend=False, xaxis_tickangle=-45, coloraxis_showscale=False)
+        return theme.style_fig(fig)
     
     def plot_root_cause_analysis(self):
         """Plot root cause breakdown"""
@@ -105,9 +95,11 @@ class FailureAnalysisTool:
             values=cause_counts.values,
             names=cause_counts.index,
             title=f'{self.program_name} - Root Cause Analysis Status',
-            hole=0.4
+            hole=0.55,
+            color_discrete_sequence=CHART_SEQUENCE
         )
-        return fig
+        fig.update_traces(marker=dict(line=dict(color=BG_ELEV, width=2)))
+        return theme.style_fig(fig)
     
     def plot_timeline(self):
         """Plot returns over time"""
@@ -122,8 +114,9 @@ class FailureAnalysisTool:
             title=f'{self.program_name} - Returns Timeline',
             markers=True
         )
-        fig.update_traces(line_color='#1f77b4', line_width=3)
-        return fig
+        fig.update_traces(line_color=PURPLE, line_width=3,
+                          marker=dict(color=MAGENTA, size=8))
+        return theme.style_fig(fig)
     
     def plot_sw_hw_breakdown(self):
         """Plot SW vs HW issues"""
@@ -133,8 +126,10 @@ class FailureAnalysisTool:
         hw_no = len(self.df[self.df['HW_Related_Issue'] == 'NO'])
         
         fig = go.Figure(data=[
-            go.Bar(name='Software', x=['Related', 'Not Related'], y=[sw_yes, sw_no]),
-            go.Bar(name='Hardware', x=['Related', 'Not Related'], y=[hw_yes, hw_no])
+            go.Bar(name='Software', x=['Related', 'Not Related'], y=[sw_yes, sw_no],
+                   marker_color=PURPLE),
+            go.Bar(name='Hardware', x=['Related', 'Not Related'], y=[hw_yes, hw_no],
+                   marker_color=GREEN)
         ])
         fig.update_layout(
             title=f'{self.program_name} - SW vs HW Issue Distribution',
@@ -142,7 +137,7 @@ class FailureAnalysisTool:
             xaxis_title='Issue Type',
             yaxis_title='Count'
         )
-        return fig
+        return theme.style_fig(fig)
     
     def create_fault_tree(self):
         """Create fault wheel analysis using hierarchical structure"""
@@ -199,7 +194,7 @@ class FailureAnalysisTool:
         labels = ['System Failure<br>(Top Event)']
         parents = ['']
         values = [root_causes.sum()]
-        colors = ['#ff6b6b']  # Red for top event
+        colors = [MAGENTA]  # Magenta for top event
         
         # Add intermediate events (categories)
         for category, causes in categories.items():
@@ -207,23 +202,18 @@ class FailureAnalysisTool:
             labels.append(f'{category}<br>({category_total} cases)')
             parents.append('System Failure<br>(Top Event)')
             values.append(category_total)
-            colors.append('#4ecdc4')  # Teal for intermediate
+            colors.append(PURPLE)  # Purple for intermediate
             
             # Add basic events (root causes)
             for cause, count in causes[:5]:  # Limit to top 5 per category
                 labels.append(f'{cause}<br>({count})')
                 parents.append(f'{category}<br>({category_total} cases)')
                 values.append(count)
-                colors.append('#95e1d3')  # Light teal for basic events
+                colors.append(GREEN)  # Green for basic events
         
         # Create sunburst diagram for fault wheel
-        # Build per-label text colors: black for center, white for outer rings
-        text_colors = ['black']  # Center "System Failure" label
-        for _ in categories:
-            text_colors.append('black')  # Category labels
-        for category, causes in categories.items():
-            for _ in causes[:5]:
-                text_colors.append('black')  # Root cause labels
+        # White labels read cleanly on the purple/green/magenta segments.
+        text_colors = ['#ffffff'] * len(labels)
 
         fig = go.Figure(go.Sunburst(
             labels=labels,
@@ -232,7 +222,7 @@ class FailureAnalysisTool:
             branchvalues="total",
             marker=dict(
                 colors=colors,
-                line=dict(color='white', width=2)
+                line=dict(color=BG_ELEV, width=2)
             ),
             hovertemplate='<b>%{label}</b><br>Cases: %{value}<br>%{percentParent}<extra></extra>',
             textfont=dict(size=12, color=text_colors),
@@ -246,7 +236,10 @@ class FailureAnalysisTool:
                 'xanchor': 'center'
             },
             height=600,
-            margin=dict(t=100, l=0, r=0, b=0)
+            margin=dict(t=100, l=0, r=0, b=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="DM Sans, sans-serif", color=TEXT)
         )
         
         return fig
@@ -261,9 +254,10 @@ class FailureAnalysisTool:
             title=f'{self.program_name} - Shipment Status',
             labels={'x': 'Status', 'y': 'Count'},
             color=status_counts.values,
-            color_continuous_scale='Viridis'
+            color_continuous_scale=CONTINUOUS_SCALE
         )
-        return fig
+        fig.update_layout(coloraxis_showscale=False)
+        return theme.style_fig(fig)
     
     def generate_report(self):
         """Generate Word document report"""
@@ -327,8 +321,7 @@ def _generate_report_bytes(file_bytes, program_name):
 # Initialize app
 def _render_program_selector():
     """Render the program selection landing page. Returns True if a program is selected."""
-    st.markdown('<div class="main-header">🔍 Failure Analysis Pattern Recognition Tool</div>', unsafe_allow_html=True)
-    st.markdown('<div style="text-align:center;color:#888;margin-bottom:24px;">Multi-program failure analysis, triage, PCB debug and statistical analytics</div>', unsafe_allow_html=True)
+    theme.render_app_header()
 
     programs = get_program_list()
 
@@ -340,10 +333,12 @@ def _render_program_selector():
             info = registry["programs"].get(name, {})
             with cols[i % len(cols)]:
                 st.markdown(
-                    f'<div style="background:#1a1a2e;border:1px solid #0f3460;border-radius:10px;padding:16px;text-align:center;">'
-                    f'<div style="font-size:1.3em;font-weight:700;color:#e0e0e0;">{info.get("display_name", name)}</div>'
-                    f'<div style="color:#888;font-size:.85em;margin:6px 0;">{info.get("product", "")}</div>'
-                    f'<div style="color:#666;font-size:.8em;">{info.get("description", "")}</div></div>',
+                    f'<div style="background:linear-gradient(160deg,{PANEL} 0%,{BG_ELEV} 100%);'
+                    f'border:1px solid {BORDER};border-left:3px solid {PURPLE};border-radius:14px;'
+                    f'padding:18px 16px;text-align:center;box-shadow:0 2px 16px #00000033;min-height:120px;">'
+                    f'<div style="font-size:1.3em;font-weight:700;color:{TEXT};">{info.get("display_name", name)}</div>'
+                    f'<div style="color:{PURPLE_BRIGHT};font-size:.85em;margin:6px 0;font-weight:600;">{info.get("product", "")}</div>'
+                    f'<div style="color:{TEXT_MUTED};font-size:.8em;">{info.get("description", "")}</div></div>',
                     unsafe_allow_html=True,
                 )
                 if st.button(f"Open {name}", key=f"sel_{name}", use_container_width=True):
@@ -383,10 +378,15 @@ def main():
 
     program_name = selected
 
-    st.markdown('<div class="main-header">🔍 Failure Analysis Pattern Recognition Tool</div>', unsafe_allow_html=True)
+    theme.render_app_header(f"Program: {program_name}")
     
     # Sidebar
     with st.sidebar:
+        st.markdown(
+            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">'
+            f'{theme.logo_svg(30)}<span style="font-weight:700;font-size:1.05em;color:{TEXT};">{APP_NAME}</span></div>',
+            unsafe_allow_html=True,
+        )
         st.header("⚙️ Configuration")
 
         # Show current program with option to switch
@@ -434,6 +434,13 @@ def main():
             st.info("You can safely close this browser tab now.")
             st.balloons()
             st.stop()
+
+        # Version footer
+        st.markdown(
+            f'<div style="text-align:center;color:{TEXT_FAINT};font-size:.75em;'
+            f'font-family:\'DM Mono\',monospace;margin-top:14px;">{APP_NAME} · v{APP_VERSION}</div>',
+            unsafe_allow_html=True,
+        )
         
     # Main content
     if uploaded_file is not None:
@@ -548,8 +555,8 @@ def main():
 
         # Welcome screen
         st.info("👈 Please upload a CSV file to begin analysis")
-        st.markdown("""
-        ### Welcome to the Failure Analysis Tool
+        st.markdown(f"""
+        ### Welcome to {APP_NAME}
         
         This tool helps you analyze field return data and identify patterns in failures.
         

@@ -462,36 +462,36 @@ FAULT_TREES = {
 }
 
 CSS = """<style>
-.ph{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#e0e0e0;padding:12px 18px;border-radius:8px;margin:10px 0 6px;font-size:1.1em;font-weight:600;border-left:4px solid #0f3460}
-.ph-c{border-left:4px solid #e94560}
-.tp-pass{background:#0d3320;border-left:4px solid #2ecc71;padding:8px 14px;border-radius:6px;margin:4px 0;color:#a8e6cf;font-family:monospace}
-.tp-fail{background:#3d1111;border-left:4px solid #e74c3c;padding:8px 14px;border-radius:6px;margin:4px 0;color:#f5b7b1;font-family:monospace}
-.tp-warn{background:#3d3011;border-left:4px solid #f39c12;padding:8px 14px;border-radius:6px;margin:4px 0;color:#fdebd0;font-family:monospace}
-.tp-skip{background:#1a1a2e;border-left:4px solid #555;padding:8px 14px;border-radius:6px;margin:4px 0;color:#888;font-family:monospace}
-.tp-monitor{background:#3d3011;border-left:4px solid #e67e22;padding:8px 14px;border-radius:6px;margin:4px 0;color:#fdebd0;font-family:monospace}
+.ph{background:linear-gradient(135deg,#38363F,#31303C);color:#F3F1F8;padding:12px 18px;border-radius:10px;margin:10px 0 6px;font-size:1.1em;font-weight:600;border-left:4px solid #8B6CFF}
+.ph-c{border-left:4px solid #E879F9}
+.tp-pass{background:#2b4a3f;border-left:4px solid #34D399;padding:8px 14px;border-radius:8px;margin:4px 0;color:#c7f0e0;font-family:'DM Mono',monospace}
+.tp-fail{background:#4a2c3c;border-left:4px solid #F472B6;padding:8px 14px;border-radius:8px;margin:4px 0;color:#f7d3e4;font-family:'DM Mono',monospace}
+.tp-warn{background:#4a4127;border-left:4px solid #FBBF24;padding:8px 14px;border-radius:8px;margin:4px 0;color:#fbeccb;font-family:'DM Mono',monospace}
+.tp-skip{background:#38363F;border-left:4px solid #524F5E;padding:8px 14px;border-radius:8px;margin:4px 0;color:#9A94A8;font-family:'DM Mono',monospace}
+.tp-monitor{background:#4a4127;border-left:4px solid #e67e22;padding:8px 14px;border-radius:8px;margin:4px 0;color:#fbeccb;font-family:'DM Mono',monospace}
 .led{display:inline-block;width:16px;height:16px;border-radius:50%;margin-right:8px;vertical-align:middle}
-.led-off{background:#333;box-shadow:0 0 2px #222}
+.led-off{background:#4a4858;box-shadow:0 0 2px #333}
 .led-blue{background:#3498db;box-shadow:0 0 8px #3498db,0 0 16px #3498db55}
-.led-green{background:#2ecc71;box-shadow:0 0 8px #2ecc71,0 0 16px #2ecc7155}
+.led-green{background:#34D399;box-shadow:0 0 8px #34D399,0 0 16px #34D39955}
 .led-red{background:#e74c3c;box-shadow:0 0 8px #e74c3c,0 0 16px #e74c3c55}
 .led-orange{background:#e67e22;box-shadow:0 0 8px #e67e22,0 0 16px #e67e2255}
-.vb{padding:16px;border-radius:10px;margin:12px 0;font-size:1.05em}
-.vb-p{background:linear-gradient(135deg,#0d3320,#1a4a30);border:2px solid #2ecc71;color:#a8e6cf}
-.vb-f{background:linear-gradient(135deg,#3d1111,#4a1a1a);border:2px solid #e74c3c;color:#f5b7b1}
-.st{width:100%;border-collapse:collapse;font-family:monospace;font-size:.9em}
-.st th{background:#16213e;color:#e0e0e0;padding:8px 12px;text-align:left;border-bottom:2px solid #0f3460}
-.st td{padding:6px 12px;border-bottom:1px solid #2a2a3e}
-.st tr.rp td{color:#2ecc71} .st tr.rf td{color:#e74c3c;font-weight:bold} .st tr.rw td{color:#f39c12} .st tr.rs td{color:#666} .st tr.rm td{color:#e67e22}
-.dd{background:#1a1a2e;border:1px solid #0f3460;border-radius:8px;padding:14px;margin:8px 0;color:#c0c0c0}
+.vb{padding:16px;border-radius:12px;margin:12px 0;font-size:1.05em}
+.vb-p{background:linear-gradient(135deg,#2b4a3f,#33564a);border:2px solid #34D399;color:#c7f0e0}
+.vb-f{background:linear-gradient(135deg,#4a2c3c,#563048);border:2px solid #F472B6;color:#f7d3e4}
+.st{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:.9em}
+.st th{background:#413F4A;color:#F3F1F8;padding:8px 12px;text-align:left;border-bottom:2px solid #8B6CFF}
+.st td{padding:6px 12px;border-bottom:1px solid #524F5E}
+.st tr.rp td{color:#34D399} .st tr.rf td{color:#F472B6;font-weight:bold} .st tr.rw td{color:#FBBF24} .st tr.rs td{color:#9A94A8} .st tr.rm td{color:#e67e22}
+.dd{background:#38363F;border:1px solid #524F5E;border-radius:10px;padding:14px;margin:8px 0;color:#d8d3e4}
 .dd ol{margin:6px 0;padding-left:20px} .dd li{margin:4px 0;line-height:1.5}
 .phase-bar{display:flex;gap:4px;margin:10px 0 16px;flex-wrap:wrap}
-.phase-pill{flex:1;min-width:90px;text-align:center;padding:8px 4px;border-radius:8px;font-size:.75em;font-weight:600;font-family:monospace;border:2px solid #333;transition:all .3s}
-.pp-gray{background:#1a1a2e;color:#666;border-color:#333}
-.pp-blue{background:#1a2a4e;color:#3498db;border-color:#3498db}
-.pp-green{background:#0d3320;color:#2ecc71;border-color:#2ecc71}
-.pp-red{background:#3d1111;color:#e74c3c;border-color:#e74c3c}
-.pp-orange{background:#3d3011;color:#e67e22;border-color:#e67e22}
-.vi-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #0f3460;border-radius:10px;padding:16px;margin:10px 0}
+.phase-pill{flex:1;min-width:90px;text-align:center;padding:8px 4px;border-radius:10px;font-size:.75em;font-weight:600;font-family:'DM Mono',monospace;border:2px solid #524F5E;transition:all .3s}
+.pp-gray{background:#38363F;color:#9A94A8;border-color:#524F5E}
+.pp-blue{background:#413F4A;color:#A78BFA;border-color:#8B6CFF}
+.pp-green{background:#2b4a3f;color:#34D399;border-color:#34D399}
+.pp-red{background:#4a2c3c;color:#F472B6;border-color:#F472B6}
+.pp-orange{background:#4a4127;color:#e67e22;border-color:#e67e22}
+.vi-box{background:linear-gradient(135deg,#38363F,#31303C);border:2px solid #524F5E;border-radius:12px;padding:16px;margin:10px 0}
 </style>"""
 
 
@@ -1174,7 +1174,13 @@ def _render_report_ui(report):
 def render_debugger_ui():
     st.markdown(CSS, unsafe_allow_html=True)
     prog = get_selected_program() or "PCB"
-    st.markdown(f'<div style="text-align:center;font-size:1.6em;font-weight:700;color:#e0e0e0;margin-bottom:4px;">{prog} PCB Interactive Debugger</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div style="text-align:center;font-size:1.7em;font-weight:700;margin-bottom:4px;'
+        f'background:linear-gradient(100deg,#A78BFA 0%,#E879F9 55%,#34D399 100%);'
+        f'-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'
+        f'{prog} PCB Interactive Debugger</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<div style="text-align:center;color:#888;margin-bottom:16px;">Step-by-step fault isolation — KGU spec vs DUT measurement</div>', unsafe_allow_html=True)
 
     if "debugger_dut_id" not in st.session_state:
