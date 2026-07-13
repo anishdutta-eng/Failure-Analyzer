@@ -140,28 +140,32 @@ def _global_css() -> str:
       }}
       [data-testid="stSidebar"] * {{ color: {TEXT}; }}
 
-      /* Primary buttons */
-      .stButton > button {{
+      /* Buttons (regular + form submit) */
+      .stButton > button, .stFormSubmitButton > button {{
         border-radius: 10px;
         border: 1px solid {BORDER};
-        background: {PANEL};
+        background: {PANEL_2};
         color: {TEXT};
         font-weight: 600;
         transition: all .18s ease;
       }}
-      .stButton > button:hover {{
+      .stButton > button:hover, .stFormSubmitButton > button:hover {{
         border-color: {PURPLE};
         color: #fff;
         box-shadow: 0 4px 18px {PURPLE}33;
         transform: translateY(-1px);
       }}
-      .stButton > button[kind="primary"] {{
+      .stButton > button p, .stFormSubmitButton > button p {{ color: inherit !important; }}
+      .stButton > button[kind="primary"],
+      .stFormSubmitButton > button {{
         background: linear-gradient(100deg, {PURPLE} 0%, {PURPLE_DEEP} 100%);
         border: none;
         color: #fff;
       }}
-      .stButton > button[kind="primary"]:hover {{
+      .stButton > button[kind="primary"]:hover,
+      .stFormSubmitButton > button:hover {{
         box-shadow: 0 6px 22px {PURPLE}55;
+        color: #fff;
       }}
       .stDownloadButton > button {{
         border-radius: 10px;
@@ -196,8 +200,30 @@ def _global_css() -> str:
       [data-testid="stExpander"] {{
         border: 1px solid {BORDER}; border-radius: 12px; background: {PANEL}66;
       }}
-      input, textarea, [data-baseweb="select"] > div {{
+      /* Text / number inputs & textareas — dark field, light text, readable placeholder */
+      .stTextInput input, .stNumberInput input, .stTextArea textarea,
+      [data-baseweb="input"] input, [data-baseweb="textarea"] textarea,
+      [data-baseweb="select"] > div {{
         border-radius: 9px !important;
+        background-color: {PANEL_2} !important;
+        color: {TEXT} !important;
+        border: 1px solid {BORDER} !important;
+      }}
+      .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus,
+      [data-baseweb="input"]:focus-within, [data-baseweb="input"] input:focus {{
+        border-color: {PURPLE} !important;
+        box-shadow: 0 0 0 2px {PURPLE}40 !important;
+      }}
+      /* Placeholder text — muted but clearly legible */
+      .stTextInput input::placeholder, .stTextArea textarea::placeholder,
+      [data-baseweb="input"] input::placeholder {{
+        color: {TEXT_MUTED} !important;
+        opacity: 1 !important;
+      }}
+      /* Widget labels above inputs */
+      [data-testid="stWidgetLabel"], .stTextInput label, .stTextArea label,
+      .stNumberInput label, .stSelectbox label, .stRadio label, .stCheckbox label {{
+        color: {TEXT} !important;
       }}
 
       /* Links & horizontal rules */
