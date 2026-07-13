@@ -175,11 +175,13 @@ def _global_css() -> str:
         transition: all .18s ease;
       }}
       .stButton > button:hover {{
-        border-color: {PURPLE};
-        color: {PURPLE};
-        box-shadow: 0 4px 16px {PURPLE}26;
+        border-color: {GREEN};
+        color: {GREEN};
+        background: {GREEN}14;
+        box-shadow: 0 4px 16px {GREEN}2e;
         transform: translateY(-1px);
       }}
+      .stButton > button:active {{ background: {GREEN}24; }}
       .stButton > button p {{ color: inherit !important; }}
       /* Primary + form-submit buttons — purple gradient, white text */
       .stButton > button[kind="primary"],
@@ -192,11 +194,12 @@ def _global_css() -> str:
         transition: all .18s ease;
       }}
       .stButton > button[kind="primary"] p, .stFormSubmitButton > button p {{ color: #fff !important; }}
+      /* Primary/submit keep their purple fill but gain an elegant green glow ring on hover */
       .stButton > button[kind="primary"]:hover,
       .stFormSubmitButton > button:hover {{
-        box-shadow: 0 6px 22px {PURPLE}55;
         color: #fff;
         transform: translateY(-1px);
+        box-shadow: 0 0 0 2px {GREEN}, 0 6px 22px {GREEN}4d;
       }}
       .stDownloadButton > button {{
         border-radius: 10px;
@@ -207,7 +210,24 @@ def _global_css() -> str:
       }}
       .stDownloadButton > button:hover {{
         border-color: {GREEN};
+        background: {GREEN}14;
         box-shadow: 0 4px 18px {GREEN}2e;
+        transform: translateY(-1px);
+      }}
+
+      /* Small icon buttons (chart/table hover toolbar, header actions, popovers)
+         pick up the same elegant green highlight on hover */
+      [data-testid="stElementToolbarButton"]:hover,
+      [data-testid="stElementToolbarButton"]:hover svg,
+      [data-testid="stToolbarActions"] button:hover,
+      button[data-testid="baseButton-header"]:hover,
+      button[data-testid="stBaseButton-header"]:hover,
+      button[data-testid="stBaseButton-headerNoPadding"]:hover,
+      [data-testid="stSidebarCollapseButton"] button:hover {{
+        color: {GREEN} !important;
+        fill: {GREEN} !important;
+        background: {GREEN}1f !important;
+        border-radius: 8px !important;
       }}
 
       /* Metric cards */
@@ -283,8 +303,10 @@ def _global_css() -> str:
         font-weight: 600 !important;
       }}
       [data-testid="stFileUploader"] button:hover {{
-        border-color: {PURPLE} !important;
-        color: {PURPLE} !important;
+        border-color: {GREEN} !important;
+        color: {GREEN} !important;
+        background: {GREEN}14 !important;
+        box-shadow: 0 4px 16px {GREEN}2e !important;
       }}
 
       /* Alerts (st.info / warning / success / error) — legible text on light canvas */
