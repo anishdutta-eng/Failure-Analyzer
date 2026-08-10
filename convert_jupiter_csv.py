@@ -62,9 +62,9 @@ def _norm_reason(reason: str) -> str:
     return r
 
 
-def _clean(v: str) -> str:
-    v = (v or "").strip()
-    return "" if v.lower() in {"n/a", "na", "none", "null", "-"} else v
+def _clean(v) -> str:
+    v = ("" if v is None else str(v)).strip()
+    return "" if v.lower() in {"n/a", "na", "none", "null", "-", "nan"} else v
 
 
 def convert_row(row: dict, idx: int) -> dict:
@@ -126,6 +126,36 @@ def convert_row(row: dict, idx: int) -> dict:
         "NTF": ntf,
         "Comments": comments,
     }
+
+
+# Columns that identify a Jupiter tracker export (used for auto-detection).
+JUPITER_SIGNATURE_COLUMNS = {"Reason Code", "Failure Category", "Root Cause"}
+
+
+def looks_like_jupiter(columns) -> bool:
+    """True if the given column set looks like a Jupiter tracker export."""
+    return JUPITER_SIGNATURE_COLUMNS.issubset(set(columns))
+
+
+def convert_dataframe(df):
+    """Convert a Jupiter tracker DataFrame to a Snowbird-schema DataFrame.
+    Values are stringified so numeric-looking columns (WOM, Time in Field)
+    don't leak float artifacts like '2333.0'."""
+    import pandas as pd
+    rows = [convert_row({k: _clean(v) for k, v in r.items()}, i)
+            for i, (_, r) in enumerate(df.iterrows(), start=1)]
+    return pd.DataFrame(rows, columns=SNOWBIRD_COLUMNS)
+
+
+def convert_bytes(file_bytes: bytes) -> bytes:
+    """Convert Jupiter CSV bytes to Snowbird-schema CSV bytes (in memory)."""
+    import io
+    import pandas as pd
+    # Read everything as strings (like csv.DictReader) so integer codes such as
+    # WOM stay '2333' rather than becoming '2333.0'.
+    df = pd.read_csv(io.BytesIO(file_bytes), dtype=str, keep_default_na=False)
+    out = convert_dataframe(df)
+    return out.to_csv(index=False).encode("utf-8")
 
 
 def convert(input_path: str, output_path: str) -> int:

@@ -12,6 +12,7 @@ from triage_assistant import render_triage_ui
 from debugger import render_debugger_ui
 from debug_analytics import render_analytics_ui
 from data_explorer import render_data_explorer
+import convert_jupiter_csv as convert_jupiter
 from program_config import (
     get_program_list, register_program, get_selected_program,
     set_selected_program, load_registry, get_program_dir
@@ -447,8 +448,7 @@ def main():
         
     # Main content
     if uploaded_file is not None:
-        # Data Explorer is schema-agnostic — read the CSV raw (do NOT run the
-        # field-returns loader, which requires Root_Cause / date columns).
+        # The Data Explorer is schema-agnostic — always explore the raw upload.
         if view_mode == "🔭 Data Explorer":
             try:
                 raw_df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
@@ -458,12 +458,24 @@ def main():
             render_data_explorer(raw_df, program_name)
             return
 
-        # Schema guard: the Dashboard / Triage / Table / Analytics views require
-        # the field-returns schema. If the uploaded CSV doesn't have it (e.g. a
-        # Jupiter tracker export), fall back to the schema-agnostic Data Explorer
-        # instead of crashing with a KeyError.
+        # For the analysis views, auto-convert a Jupiter tracker export into the
+        # failure-returns schema so the Dashboard / Fault Wheel work from the
+        # ORIGINAL file (no manual conversion needed).
+        file_bytes = uploaded_file.getvalue()
         try:
-            _peek = pd.read_csv(io.BytesIO(uploaded_file.getvalue()), nrows=5)
+            _cols = set(pd.read_csv(io.BytesIO(file_bytes), nrows=1).columns)
+            if convert_jupiter.looks_like_jupiter(_cols) and "Root_Cause" not in _cols:
+                file_bytes = convert_jupiter.convert_bytes(file_bytes)
+                st.success("Detected a Jupiter tracker CSV — auto-converted it to the "
+                           "failure-analysis schema so the Dashboard and Fault Wheel work directly.")
+        except Exception:
+            pass  # fall through to the schema guard below
+
+        # Schema guard: the Dashboard / Triage / Table / Analytics views require
+        # the field-returns schema. If the CSV still doesn't have it, fall back
+        # to the schema-agnostic Data Explorer instead of crashing.
+        try:
+            _peek = pd.read_csv(io.BytesIO(file_bytes), nrows=5)
         except Exception as e:
             st.error(f"Could not read the CSV: {e}")
             return
@@ -476,12 +488,12 @@ def main():
                 "from it. Showing the **Data Explorer** instead — or pick the 🔭 Data Explorer "
                 "view in the sidebar for arbitrary CSVs like this one."
             )
-            raw_df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
+            raw_df = pd.read_csv(io.BytesIO(file_bytes))
             render_data_explorer(raw_df, program_name)
             return
 
         tool = FailureAnalysisTool()
-        df = tool.load_data(uploaded_file, program_name)
+        df = tool.load_data(io.BytesIO(file_bytes), program_name)
         
         # Route to appropriate view
         if view_mode == "🔧 Triage Assistant":
@@ -555,7 +567,7 @@ def main():
         st.header("📄 Report Generation")
         # Build the report once per (file, program); cached across reruns so the
         # Word document isn't regenerated on every interaction.
-        report_bytes = _generate_report_bytes(uploaded_file.getvalue(), program_name)
+        report_bytes = _generate_report_bytes(file_bytes, program_name)
         col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
             if st.button("🔄 Generate Report", type="primary"):
