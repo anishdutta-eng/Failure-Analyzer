@@ -5,6 +5,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from program_config import get_selected_program
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.preprocessing import LabelEncoder
 import pickle
 import re
@@ -12,14 +14,102 @@ from collections import Counter
 import plotly.graph_objects as go
 import plotly.express as px
 
+
+# Domain normalization: expand abbreviations and collapse key multi-word
+# phrases into single tokens so the vectorizer treats them as one strong
+# signal (e.g. "flashing blue" -> the cloud-registration failure). Applied to
+# both the training corpus and the query so they share the same vocabulary.
+NORMALIZATION_PHRASES = [
+    ("dead after arrival", " daa dead_after_arrival "),
+    ("dead on arrival", " doa dead_on_arrival "),
+    ("flashing blue", " flashing_blue cloud_registration "),
+    ("blinking blue", " flashing_blue cloud_registration "),
+    ("solid blue", " solid_blue setup_mode "),
+    ("flashing white", " flashing_white boot_connection "),
+    ("blinking white", " flashing_white boot_connection "),
+    ("liquid ingress", " liquid_ingress moisture "),
+    ("water ingress", " liquid_ingress moisture "),
+    ("water damage", " liquid_ingress moisture "),
+    ("cold boot", " cold_boot solder_joint intermittent "),
+    ("thermal cycling", " thermal_cycling solder_joint "),
+    ("cloud registration", " cloud_registration "),
+    ("no power", " no_power dead "),
+    ("won't boot", " no_boot "),
+    ("wont boot", " no_boot "),
+    ("no boot", " no_boot "),
+    ("boot loop", " boot_loop "),
+    ("power cycle", " power_cycle reboot "),
+]
+
+# Whole-word abbreviation expansions (word-boundary matched so we don't touch
+# substrings inside other words).
+NORMALIZATION_WORDS = {
+    "daa": "daa dead_after_arrival",
+    "doa": "doa dead_on_arrival",
+    "emmc": "emmc flash_memory",
+    "poe": "poe power_over_ethernet",
+    "eos": "eos electrical_overstress",
+    "eipd": "eipd electrical_overstress physical_damage",
+    "esd": "esd electrical_overstress",
+    "vswr": "vswr antenna rf",
+    "esr": "esr capacitor",
+    "bulging": "bulging capacitor",
+    "burst": "burst capacitor",
+    "ripple": "ripple capacitor",
+}
+
+
+# Values that appear in the Root_Cause_Reason column but are not real root
+# causes (placeholders / SW-HW flags leaking in). Excluded from training and
+# from the kNN vote so they can't be predicted.
+JUNK_LABELS = {
+    '', 'nan', 'none', 'no', 'yes', 'na', 'n/a', 'unknown', 'tbd', 'todo',
+    'to do', "won't do", 'wont do', '-', '?', 'pending', 'n/a',
+}
+
+
+def canonical_label_key(s: str) -> str:
+    """Normalized key used to merge label variants that differ only by
+    whitespace/case (e.g. 'Liquid ingress' and 'Liquid Ingress')."""
+    return re.sub(r"\s+", " ", str(s).strip()).lower()
+
+
+def normalize_text(text: str) -> str:
+    """Lowercase and expand domain synonyms/abbreviations. Shared by the
+    training corpus and the query so both map into the same vocabulary."""
+    if text is None:
+        return ""
+    t = " " + str(text).lower() + " "
+    for phrase, repl in NORMALIZATION_PHRASES:
+        t = t.replace(phrase, repl)
+    def _sub_word(m):
+        return NORMALIZATION_WORDS[m.group(0)]
+    if NORMALIZATION_WORDS:
+        pattern = r"\b(" + "|".join(re.escape(w) for w in NORMALIZATION_WORDS) + r")\b"
+        t = re.sub(pattern, _sub_word, t)
+    return re.sub(r"\s+", " ", t).strip()
+
 class TriageAssistant:
     def __init__(self):
-        self.vectorizer = TfidfVectorizer(max_features=100, stop_words='english')
-        self.model = None
+        # Richer vocabulary + bigrams capture multi-word failure signatures
+        # ("flashing blue", "liquid ingress"). sublinear_tf dampens repeated
+        # terms so long comments don't dominate.
+        self.vectorizer = TfidfVectorizer(
+            max_features=4000,
+            ngram_range=(1, 2),
+            stop_words='english',
+            sublinear_tf=True,
+            min_df=1,
+        )
+        self.model = None                 # active classifier (kept for API compat)
         self.label_encoder = LabelEncoder()
         self.df = None
         self.symptom_patterns = {}
-        self.historical_vectors = None  # cached TF-IDF matrix of the full corpus
+        self.historical_vectors = None    # cached TF-IDF matrix of the leakage-free corpus
+        self.corpus_root_causes = None    # root cause aligned to each corpus row (for kNN vote)
+        self.cv_accuracy = None           # cross-validated accuracy estimate
+        self.model_type = None
+        self.n_training_cases = 0
         
         # Technical knowledge base for eero Outdoor (Snowbird)
         self.technical_specs = {
@@ -242,13 +332,54 @@ class TriageAssistant:
             (~self.df['Jira_Ticket'].isin(["Won't do", "To Do", "NA"]))
         ].copy()
         
-        # Clean and prepare data
+        # symptom_corpus is the LEAKAGE-FREE model input: only fields that are
+        # actually observable at triage time (return reason + comments +
+        # SW/HW hints). It deliberately EXCLUDES Root_Cause_Reason, which is
+        # the label — including it (as the old combined_text did) leaked the
+        # answer into the features and inflated apparent accuracy.
+        sw = self.df['SW_Related_Issue'].fillna('').apply(
+            lambda v: 'software_related' if str(v).upper() == 'YES' else '')
+        hw = self.df['HW_Related_Issue'].fillna('').apply(
+            lambda v: 'hardware_related' if str(v).upper() == 'YES' else '')
+        raw_corpus = (
+            self.df['Return_Reason_Code'].fillna('') + ' ' +
+            self.df['Comments'].fillna('') + ' ' + sw + ' ' + hw
+        )
+        self.df['symptom_corpus'] = raw_corpus.apply(normalize_text)
+
+        # Kept only for backward-compatible display/reference; NOT used for
+        # training or similarity anymore.
         self.df['combined_text'] = (
-            self.df['Return_Reason_Code'].fillna('') + ' ' + 
+            self.df['Return_Reason_Code'].fillna('') + ' ' +
             self.df['Comments'].fillna('') + ' ' +
             self.df['Root_Cause_Reason'].fillna('')
         )
+
+        self._canonicalize_labels()
         return self.df
+
+    def _canonicalize_labels(self):
+        """Merge root-cause label variants that differ only by case/whitespace
+        and drop placeholder/junk labels. Produces 'root_cause_clean' used for
+        training and the kNN vote; the original column is untouched for display."""
+        raw = self.df['Root_Cause_Reason'].astype(str)
+        forms = {}
+        for s in raw:
+            k = canonical_label_key(s)
+            if k in JUNK_LABELS:
+                continue
+            display = re.sub(r"\s+", " ", s.strip())
+            forms.setdefault(k, Counter())[display] += 1
+        # Canonical display form = the most common original spelling per key
+        canonical = {k: c.most_common(1)[0][0] for k, c in forms.items()}
+
+        def clean(s):
+            k = canonical_label_key(s)
+            if k in JUNK_LABELS:
+                return None
+            return canonical.get(k)
+
+        self.df['root_cause_clean'] = raw.apply(clean)
     
     def search_technical_keywords(self, keywords):
         """Search CSV for technical keywords and return related cases with JIRA tickets (excluding Won't do)"""
@@ -379,52 +510,115 @@ class TriageAssistant:
         self.symptom_patterns = patterns
         return patterns
     
+    def _make_classifier(self):
+        """Linear model tuned for sparse TF-IDF text with class imbalance.
+        Outperforms RandomForest here and gives better-behaved probabilities."""
+        return LogisticRegression(
+            C=8.0,
+            class_weight='balanced',
+            max_iter=2000,
+            solver='liblinear',   # robust for small, high-dimensional sparse data
+        )
+
+    def _evaluate_cv(self, X, y_encoded):
+        """Stratified cross-validated accuracy on classes that have enough
+        samples to validate. Returns a float estimate or None.
+
+        We only report a number when there is enough labeled data to make the
+        estimate meaningful — reporting "100%" off a handful of samples would
+        be misleading, so in that case we return None ('needs more data')."""
+        counts = Counter(y_encoded)
+        keep = [c for c, n in counts.items() if n >= 2]
+        # Need a few classes and a reasonable number of validatable samples,
+        # otherwise the estimate is noise.
+        eligible = int(np.isin(y_encoded, keep).sum())
+        if len(keep) < 3 or eligible < 12:
+            return None
+        mask = np.isin(y_encoded, keep)
+        Xk, yk = X[mask], y_encoded[mask]
+        min_count = min(Counter(yk).values())
+        k = int(max(2, min(5, min_count)))
+        try:
+            scores = cross_val_score(
+                self._make_classifier(), Xk, yk,
+                cv=StratifiedKFold(n_splits=k, shuffle=True, random_state=42),
+                scoring='accuracy',
+            )
+            return float(scores.mean())
+        except Exception:
+            return None
+
     def train_model(self):
-        """Train ML model on historical data"""
-        # Filter data with known root causes
-        train_df = self.df[
-            (self.df['Root_Cause_Reason'].notna()) & 
-            (self.df['Root_Cause_Reason'] != 'nan')
-        ].copy()
-        
-        # Always fit vectorizer for similarity search, even if not enough data for model
+        """Train the triage classifier on historical data (leakage-free corpus)."""
+        # Filter to rows that have a real (canonicalized) root cause label
+        train_df = self.df[self.df['root_cause_clean'].notna()].copy()
+
+        # Always fit the vectorizer on the full leakage-free corpus so
+        # similarity search works even when there isn't enough labeled data.
         if len(self.df) > 0:
-            X_all = self.df['combined_text'].values
+            X_all = self.df['symptom_corpus'].values
             self.vectorizer.fit(X_all)
-            # Precompute corpus vectors once so find_similar_cases doesn't
-            # re-vectorize the entire history on every query.
             self.historical_vectors = self.vectorizer.transform(X_all)
-        
-        if len(train_df) < 5:
-            return False, "Not enough training data (need at least 5 cases with root causes)"
-        
-        # Prepare features
-        X_text = train_df['combined_text'].values
-        y = train_df['Root_Cause_Reason'].values
-        
-        # Encode labels
+            self.corpus_root_causes = self.df['root_cause_clean'].values
+
+        self.n_training_cases = len(train_df)
+        if len(train_df) < 5 or train_df['root_cause_clean'].nunique() < 2:
+            self.model = None
+            return False, "Not enough labeled data to train (need >=5 cases across >=2 root causes)"
+
+        X_vectorized = self.vectorizer.transform(train_df['symptom_corpus'].values)
+        y = train_df['root_cause_clean'].values
         y_encoded = self.label_encoder.fit_transform(y)
-        
-        # Vectorize text
-        X_vectorized = self.vectorizer.transform(X_text)
-        
-        # Train model
-        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+        # Measure accuracy before fitting the final model on all data
+        self.cv_accuracy = self._evaluate_cv(X_vectorized, y_encoded)
+
+        self.model = self._make_classifier()
         self.model.fit(X_vectorized, y_encoded)
-        
-        return True, f"Model trained on {len(train_df)} cases"
+        self.model_type = "Logistic Regression + kNN ensemble"
+
+        msg = f"Model trained on {len(train_df)} cases across {len(self.label_encoder.classes_)} root causes"
+        if self.cv_accuracy is not None:
+            msg += f" · cross-validated accuracy ~{self.cv_accuracy*100:.0f}%"
+        return True, msg
+
+    def _knn_distribution(self, input_vector, k=10, threshold=0.12):
+        """Similarity-weighted vote over the nearest historical cases,
+        returning a normalized {root_cause: probability} distribution."""
+        if self.historical_vectors is None or self.corpus_root_causes is None:
+            return {}
+        sims = cosine_similarity(input_vector, self.historical_vectors)[0]
+        order = sims.argsort()[::-1]
+        weights = {}
+        used = 0
+        for idx in order:
+            s = sims[idx]
+            if s < threshold or used >= k:
+                break
+            cause = self.corpus_root_causes[idx]
+            if cause is None:
+                continue
+            cause_s = str(cause).strip()
+            if not cause_s or cause_s.lower() == 'nan':
+                continue
+            weights[cause_s] = weights.get(cause_s, 0.0) + float(s)
+            used += 1
+        total = sum(weights.values())
+        if total <= 0:
+            return {}
+        return {c: w / total for c, w in weights.items()}
     
     def find_similar_cases(self, symptom_text, top_n=5):
         """Find similar historical cases (excluding Won't do)"""
         if self.df is None or len(self.df) == 0:
             return []
         
-        # Vectorize input
-        input_vector = self.vectorizer.transform([symptom_text])
+        # Vectorize input through the same normalization the corpus used
+        input_vector = self.vectorizer.transform([normalize_text(symptom_text)])
         
         # Reuse precomputed corpus vectors; fall back to computing once if needed
         if self.historical_vectors is None:
-            self.historical_vectors = self.vectorizer.transform(self.df['combined_text'])
+            self.historical_vectors = self.vectorizer.transform(self.df['symptom_corpus'])
         historical_vectors = self.historical_vectors
         
         # Calculate similarity
@@ -459,29 +653,54 @@ class TriageAssistant:
         
         return similar_cases
     
+    def predict_top(self, symptom_text, top_k=3, w_clf=0.6, w_knn=0.4):
+        """Return the top-k (root_cause, score) predictions by blending the
+        classifier's probabilities with a similarity-weighted kNN vote.
+
+        The blend is more robust than either signal alone: the classifier
+        generalizes across vocabulary, while the kNN vote anchors the answer
+        to real precedent and prevents confident-but-wrong single guesses."""
+        input_vector = self.vectorizer.transform([normalize_text(symptom_text)])
+
+        scores = {}
+
+        # Classifier contribution
+        if self.model is not None:
+            probs = self.model.predict_proba(input_vector)[0]
+            classes = self.label_encoder.inverse_transform(self.model.classes_)
+            for cause, p in zip(classes, probs):
+                scores[cause] = scores.get(cause, 0.0) + w_clf * float(p)
+
+        # kNN vote contribution
+        knn = self._knn_distribution(input_vector)
+        for cause, p in knn.items():
+            scores[cause] = scores.get(cause, 0.0) + w_knn * p
+
+        if not scores:
+            return []
+
+        # Renormalize over the actually-scored causes so confidence is
+        # comparable regardless of which signals fired.
+        total = sum(scores.values())
+        if total > 0:
+            scores = {c: v / total for c, v in scores.items()}
+
+        ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)
+        return ranked[:top_k]
+
     def predict_root_cause(self, symptom_text):
-        """Predict root cause using ML model"""
-        if self.model is None:
+        """Predict the single most likely root cause and a blended confidence."""
+        ranked = self.predict_top(symptom_text, top_k=1)
+        if not ranked:
             return None, 0.0
-        
-        # Vectorize input
-        input_vector = self.vectorizer.transform([symptom_text])
-        
-        # Predict
-        prediction = self.model.predict(input_vector)[0]
-        probabilities = self.model.predict_proba(input_vector)[0]
-        
-        # Decode prediction
-        predicted_cause = self.label_encoder.inverse_transform([prediction])[0]
-        confidence = probabilities[prediction]
-        
-        return predicted_cause, confidence
+        return ranked[0][0], ranked[0][1]
     
     def generate_triage_recommendation(self, symptom_text, return_reason=None):
         """Generate comprehensive triage recommendation"""
         recommendation = {
             'predicted_root_cause': None,
             'confidence': 0.0,
+            'top_predictions': [],
             'similar_cases': [],
             'triage_steps': [],
             'priority': 'Medium',
@@ -489,11 +708,13 @@ class TriageAssistant:
             'related_jiras': []
         }
         
-        # ML Prediction
-        if self.model is not None:
-            predicted_cause, confidence = self.predict_root_cause(symptom_text)
-            recommendation['predicted_root_cause'] = predicted_cause
-            recommendation['confidence'] = confidence
+        # Blended prediction (classifier + similarity-weighted kNN vote). Works
+        # even without a trained classifier, as long as we have history.
+        top_predictions = self.predict_top(symptom_text, top_k=3)
+        recommendation['top_predictions'] = top_predictions
+        if top_predictions:
+            recommendation['predicted_root_cause'] = top_predictions[0][0]
+            recommendation['confidence'] = top_predictions[0][1]
         
         # Find similar cases
         similar_cases = self.find_similar_cases(symptom_text, top_n=5)
@@ -808,7 +1029,10 @@ class TriageAssistant:
             'total_cases': len(self.df) if self.df is not None else 0,
             'unique_symptoms': len(self.symptom_patterns),
             'cases_with_root_cause': 0,
-            'model_trained': self.model is not None
+            'model_trained': self.model is not None,
+            'model_type': self.model_type,
+            'cv_accuracy': self.cv_accuracy,
+            'training_cases': self.n_training_cases,
         }
         
         if self.df is not None:
@@ -984,6 +1208,20 @@ def render_triage_ui(df):
         col2.metric("Unique Symptoms", stats['unique_symptoms'])
         col3.metric("Cases with Root Cause", stats['cases_with_root_cause'])
         col4.metric("Model Status", "✅ Trained" if stats['model_trained'] else "❌ Not Trained")
+
+        col5, col6, col7, col8 = st.columns(4)
+        acc = stats.get('cv_accuracy')
+        col5.metric("Cross-Validated Accuracy", f"{acc*100:.0f}%" if acc is not None else "N/A")
+        col6.metric("Training Cases", stats.get('training_cases', 0))
+        col7.metric("Model", stats.get('model_type') or "—")
+        col8.metric("Prediction", "Classifier + kNN")
+        if acc is not None:
+            st.caption("Accuracy is a stratified cross-validation estimate on root causes with at least two examples. "
+                       "It improves as more debugged cases are added.")
+        else:
+            st.caption("Not enough labeled history yet to estimate accuracy reliably. "
+                       "Predictions still work (classifier + similarity vote); the estimate will appear "
+                       "once more cases with confirmed root causes accumulate.")
     
     st.markdown("---")
     
@@ -1127,9 +1365,20 @@ def render_triage_ui(df):
                     if failure_modes:
                         st.metric("Failure Modes", len(failure_modes))
                 
-                # Predicted Root Cause
+                # Predicted Root Cause (blended classifier + kNN)
                 if recommendation['predicted_root_cause']:
-                    st.info(f"🎯 **ML Predicted Root Cause:** {recommendation['predicted_root_cause']}")
+                    conf = recommendation['confidence']
+                    st.info(f"🎯 **Predicted Root Cause:** {recommendation['predicted_root_cause']}  ·  {conf*100:.0f}% confidence")
+                    if conf < 0.4:
+                        st.caption("⚠️ Low confidence — treat the ranked candidates below as leads and lean on the similar cases and failure-mode analysis.")
+
+                    top_preds = recommendation.get('top_predictions', [])
+                    if len(top_preds) > 1:
+                        st.write("**Ranked candidate root causes:**")
+                        for rank, (cause, score) in enumerate(top_preds, 1):
+                            st.markdown(
+                                f"{rank}. {cause} — `{score*100:.0f}%`"
+                            )
                 
                 # Failure Mode Analysis
                 if failure_modes:
