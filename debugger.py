@@ -5,6 +5,8 @@ import json
 import os
 from datetime import datetime, date
 from program_config import get_reports_dir, get_ml_model_path, get_selected_program
+import daa_fa_engine as daa
+import daa_knowledge_base as daa_kb
 
 PHASES = {
     1: {"name": "PoE Input Stage", "icon": "🔌", "desc": "Verify PoE power delivery and 5V system rail", "critical": True},
@@ -1177,6 +1179,218 @@ def _render_report_ui(report):
                            file_name=f"{report['report_id']}_dfmea.csv", mime="text/csv", use_container_width=True)
 
 
+def _render_daa_mechanism(mech, rank):
+    """Render one ranked failure-mechanism hypothesis with tests and citations."""
+    score = mech.get("likelihood_score", 0)
+    badge = "🔴 Most likely" if rank == 0 else ("🟠 Likely" if score >= 4 else "🟡 Possible")
+    with st.expander(f"{rank+1}. {mech['name']}  ·  {badge}", expanded=(rank == 0)):
+        st.markdown(f"<span style='color:#5B5470;'>{mech['description']}</span>", unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Likely root causes**")
+            for c in mech.get("root_causes", []):
+                st.markdown(f"- {c}")
+        with col2:
+            st.markdown("**Confirm nondestructively (do these first)**")
+            for t in mech.get("nondestructive_tests", []):
+                st.markdown(f"- {t}")
+        if mech.get("destructive_tests"):
+            st.markdown("**Destructive confirmation (last resort):** "
+                        + "; ".join(mech["destructive_tests"]))
+        refs = mech.get("references", [])
+        if refs:
+            links = "  ·  ".join(f"[{r['title']}]({r['url']})" for r in refs)
+            st.markdown(f"<span style='font-size:.82em;color:#8B84A0;'>Sources: {links}</span>",
+                        unsafe_allow_html=True)
+
+
+def _render_daa_deduction(ded, resistances):
+    """Render the full deduction: verdict, root faults, mechanisms, consequences."""
+    verdict = ded["verdict"]
+    vtext = ded["verdict_text"]
+    if verdict == "power_fault_localized":
+        st.markdown(f'<div class="vb vb-f"><b>🎯 {vtext}</b></div>', unsafe_allow_html=True)
+    elif verdict == "power_ok_escalate":
+        st.markdown(f'<div class="vb vb-p"><b>✅ {vtext}</b></div>', unsafe_allow_html=True)
+    else:
+        st.info(vtext)
+
+    for i, h in enumerate(ded["hypotheses"]):
+        st.markdown(f'<div class="ph ph-c">Root fault {i+1}: {h["rail"]}</div>', unsafe_allow_html=True)
+        if h.get("location"):
+            st.caption(f"📍 {h['location']}")
+        st.markdown(f"**Electrical signature:** {h['signature_label']}")
+
+        # Resolve open-vs-short if a dead rail still needs the R-to-GND probe
+        if h.get("needs_resistance_probe"):
+            st.warning("This rail reads dead. Measure resistance from the rail to GND "
+                       "(board OFF) to tell a regulator-open from a load-short.")
+            rv = st.text_input(f"Resistance to GND at {h['rail'].split(' — ')[0]} (Ω)",
+                               key=f"daa_r_{h['node']}", placeholder="e.g. 0.4 or 12")
+            rf = _to_float_safe(rv)
+            if rf is not None:
+                resistances[h["node"]] = rf
+                verdict_rs = daa.open_or_short(rf)
+                icon = "🔻 SHORT" if verdict_rs["signature"] == daa_kb.SIG_DEAD_SHORT else "⭕ OPEN"
+                st.markdown(f"**{icon} — {verdict_rs['verdict']}.** {verdict_rs['meaning']}")
+                st.caption(verdict_rs["first_action"])
+                if verdict_rs["ambiguous"]:
+                    st.caption("⚠️ Resistance is in the ambiguous 1–5 Ω band — treat as a loaded "
+                               "regulator and confirm by scoping the switching node.")
+
+        if h.get("board_fail_action"):
+            st.markdown(f"**Board-specific guidance:** {h['board_fail_action']}")
+        if h.get("schematic_path"):
+            st.markdown(f"**Signal path:** `{h['schematic_path']}`")
+
+        st.markdown("##### Ranked failure mechanisms (knowledge base)")
+        for rank, mech in enumerate(h.get("mechanisms", [])):
+            _render_daa_mechanism(mech, rank)
+
+        # Board component-level checklist (reuse existing renderer)
+        if h.get("component_diagnostics"):
+            st.markdown("##### Board component checklist for this rail")
+            _render_component_diagnostics(h["component_diagnostics"])
+
+    if ded["consequences"]:
+        names = ", ".join(c["node"].replace("V_", "").replace("_", " ") for c in ded["consequences"])
+        st.markdown(f'<div class="dd"><b>Downstream rails explained by the root fault (not separate faults):</b> {names}</div>', unsafe_allow_html=True)
+    if ded["marginal"]:
+        st.caption("Marginal (near-limit) rails to keep an eye on: "
+                   + ", ".join(m.replace("V_", "").replace("_", " ") for m in ded["marginal"]))
+
+
+def _to_float_safe(v):
+    try:
+        return float(str(v).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _daa_report_text(summary, did, td, prog):
+    """Human-readable DAA localization report (markdown)."""
+    lines = [f"# DAA Failure-Analysis Report — {prog}",
+             f"DUT: {did or 'N/A'}    Date: {td}",
+             f"Complaint: {summary['complaint']}", "",
+             f"## Verdict\n{summary['verdict_text']}", ""]
+    if summary.get("primary_fault_rail"):
+        lines += [f"Primary fault rail: {summary['primary_fault_rail']}",
+                  f"Signature: {summary['primary_signature']}",
+                  f"Most likely mechanism: {summary['top_mechanism']}", ""]
+    for i, h in enumerate(summary["hypotheses"]):
+        lines.append(f"## Root fault {i+1}: {h['rail']}")
+        lines.append(f"- Signature: {h['signature_label']}")
+        if h.get("board_fail_action"):
+            lines.append(f"- Board guidance: {h['board_fail_action']}")
+        lines.append("- Ranked mechanisms:")
+        for m in h.get("mechanisms", []):
+            refs = "; ".join(r["url"] for r in m.get("references", []))
+            lines.append(f"  - {m['name']} (score {m.get('likelihood_score',0)}) — sources: {refs}")
+    if summary.get("consequences_suppressed"):
+        lines.append("\n## Downstream consequences (explained by root fault)")
+        lines.append(", ".join(summary["consequences_suppressed"]))
+    return "\n".join(lines)
+
+
+def render_daa_ui(did, td, ts):
+    """DAA Fault Localizer — guided, schematic-aware, knowledge-base-backed."""
+    prog = get_selected_program() or "PCB"
+    st.markdown(
+        '<div style="text-align:center;font-size:1.4em;font-weight:700;margin:4px 0 2px;'
+        'background:linear-gradient(100deg,#5B21B6 0%,#7C3AED 100%);'
+        '-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">'
+        '🎯 DAA Fault Localizer</div>', unsafe_allow_html=True)
+    st.caption("Deterministic power-tree fault isolation fused with a cited PCB failure-analysis "
+               "knowledge base. Works with no training data.")
+
+    if "daa_resistances" not in st.session_state:
+        st.session_state.daa_resistances = {}
+    readings = st.session_state.debugger_readings
+
+    c1, c2 = st.columns([2, 3])
+    with c1:
+        complaint = st.selectbox("Reported complaint", list(daa.COMPLAINTS.keys()),
+                                 format_func=lambda k: daa.COMPLAINTS[k])
+    with c2:
+        obs = st.text_area("Visual / environmental observations (optional)",
+                           key="daa_observations", height=68,
+                           placeholder="e.g. burnt smell near SoC, corrosion at connector, cracked cap, bulging")
+
+    approach = st.radio("Approach", ["Guided probe (recommended)", "Analyze what I've measured"],
+                        horizontal=True)
+
+    st.markdown("---")
+
+    if approach == "Guided probe (recommended)":
+        measured = [k for k in daa.COMPLAINT_BRANCHES.get(complaint, daa.BOOT_CRITICAL) if k in readings]
+        st.caption(f"Measured {len(measured)} rail(s) on this branch so far.")
+        nxt = daa.next_probe(readings, complaint, TEST_POINTS, evaluate)
+        if nxt:
+            tp = TEST_POINTS[nxt["node"]]
+            sp = nxt["spec"]
+            nom = sp["nom"] if sp["nom"] is not None else "N/A"
+            st.markdown(f'<div class="ph"><span class="led led-blue"></span>'
+                        f'Next probe → <b>{nxt["tp"]} — {nxt["name"]}</b></div>', unsafe_allow_html=True)
+            st.caption(f"📍 {nxt['loc']}")
+            st.markdown(f"_{nxt['rationale']}_")
+            st.markdown(f"Expected (KGU): **{sp['lsl']} – {sp['usl']} {sp['unit']}** (nom {nom})")
+            val = st.text_input(f"Measured value at {nxt['tp']} ({sp['unit']})",
+                                key=f"daa_val_{nxt['node']}")
+            if val:
+                readings[nxt["node"]] = val
+                s, m = evaluate(val, tp)
+                icon = {"pass": "✅", "warn": "⚠️", "fail": "❌", "monitor": "🟠"}.get(s, "")
+                st.markdown(f"{icon} **{s.upper()}** — {m}")
+                st.button("Record & recommend next probe →")  # any click reruns and advances
+        else:
+            st.success("Guided sequence complete for this branch — see the analysis below.")
+
+    # Deduction / analysis
+    st.markdown("---")
+    show = st.button("🔬 Analyze & Localize Fault", type="primary", use_container_width=True) \
+        or approach == "Analyze what I've measured"
+    if show:
+        if not readings:
+            st.warning("No measurements yet. Use the guided probe to enter at least the PoE input and 5V bus.")
+            return
+        ded = daa.deduce(readings, TEST_POINTS, evaluate, SCHEMATIC_DB,
+                         observations=st.session_state.get("daa_observations", ""),
+                         resistances=st.session_state.daa_resistances)
+        _render_daa_deduction(ded, st.session_state.daa_resistances)
+
+        # Downloadable DAA report
+        summary = daa.daa_summary(readings, TEST_POINTS, evaluate, SCHEMATIC_DB,
+                                  observations=st.session_state.get("daa_observations", ""),
+                                  resistances=st.session_state.daa_resistances,
+                                  complaint=complaint)
+        st.download_button("📥 Download DAA Localization Report (Markdown)",
+                           data=_daa_report_text(summary, did, td, prog),
+                           file_name=f"DAA_{did or 'DUT'}_{td}.md", mime="text/markdown",
+                           use_container_width=True)
+
+    # Methodology + graph-integrity caveat
+    with st.expander("📚 Failure-analysis methodology (nondestructive → destructive)", expanded=False):
+        for stage in daa_kb.FA_METHODOLOGY:
+            tag = "🟢 nondestructive" if stage["nondestructive"] else "🔴 destructive"
+            st.markdown(f"**{stage['stage']}**  ·  _{tag}_")
+            for s in stage["steps"]:
+                st.markdown(f"- {s}")
+
+    with st.expander("🧭 Power-tree model & edges to verify", expanded=False):
+        v = daa.validate_tree(TEST_POINTS)
+        if v["issues"]:
+            st.error("Graph issues: " + "; ".join(v["issues"]))
+        else:
+            st.success("Power-tree integrity OK — every voltage rail is modeled with a valid source path.")
+        if v["unverified_edges"]:
+            st.caption("These parent edges were inferred from schematic descriptions and should be "
+                       "engineer-verified against the schematic:")
+            for n in v["unverified_edges"]:
+                tp = TEST_POINTS.get(n, {})
+                parent = daa.POWER_TREE[n]["parent"].replace("V_", "").replace("_", " ")
+                st.markdown(f"- **{tp.get('tp', n)}** ({tp.get('name','')}) ← assumed fed by *{parent}*")
+
+
 def render_debugger_ui():
     st.markdown(CSS, unsafe_allow_html=True)
     prog = get_selected_program() or "PCB"
@@ -1222,7 +1436,12 @@ def render_debugger_ui():
     _render_visual_inspection()
 
     st.markdown("---")
-    mode = st.radio("Debug Mode", ["Guided (Phase-by-Phase)", "Quick Scan (All Rails)", "Deep Dive (Single Group)"], horizontal=True)
+    mode = st.radio("Debug Mode", ["Guided (Phase-by-Phase)", "Quick Scan (All Rails)",
+                                   "Deep Dive (Single Group)", "🎯 DAA Fault Localizer"], horizontal=True)
+
+    if mode == "🎯 DAA Fault Localizer":
+        render_daa_ui(did, td, ts)
+        return
 
     if mode == "Guided (Phase-by-Phase)":
         opts = [f"{PHASES[k]['icon']} Phase {k}: {PHASES[k]['name']}" for k in sorted(PHASES)]
