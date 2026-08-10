@@ -76,6 +76,8 @@ class FailureAnalysisTool:
     def plot_return_reasons(self):
         """Plot return reason distribution"""
         reason_counts = self.df['Return_Reason_Code'].value_counts()
+        if reason_counts.empty:
+            return None
         
         fig = px.bar(
             x=reason_counts.index,
@@ -92,6 +94,8 @@ class FailureAnalysisTool:
         """Plot root cause breakdown"""
         root_cause_df = self.df[self.df['Root_Cause'].notna()]
         cause_counts = root_cause_df['Root_Cause'].value_counts()
+        if cause_counts.empty:
+            return None
         
         fig = px.pie(
             values=cause_counts.values,
@@ -106,6 +110,8 @@ class FailureAnalysisTool:
     def plot_timeline(self):
         """Plot returns over time"""
         timeline_df = self.df[self.df['User_Reported_Date'].notna()].copy()
+        if timeline_df.empty:
+            return None  # no report dates (e.g. Jupiter tracker) — skip the timeline
         timeline_df['Month'] = timeline_df['User_Reported_Date'].dt.to_period('M').astype(str)
         monthly_counts = timeline_df.groupby('Month').size().reset_index(name='Count')
         
@@ -247,8 +253,11 @@ class FailureAnalysisTool:
         return fig
     
     def plot_shipment_status(self):
-        """Plot shipment status"""
+        """Plot shipment status. Returns None when there's no data so the
+        dashboard can skip it entirely."""
         status_counts = self.df['Shipment_Status'].value_counts()
+        if status_counts.empty:
+            return None
         
         fig = px.bar(
             x=status_counts.index,
@@ -531,30 +540,40 @@ def main():
         # Visualizations
         if show_charts:
             st.header("📊 Visualizations")
-            
+
+            def _safe_chart(fn, col=None):
+                """Render a chart if it has data; never let one chart abort the page."""
+                try:
+                    fig = fn()
+                except Exception as e:
+                    (col or st).caption(f"(chart skipped: {e})")
+                    return
+                if fig is None:
+                    return  # no data for this chart — skip it silently
+                (col or st).plotly_chart(fig, use_container_width=True)
+
             # Row 1
             col1, col2 = st.columns(2)
-            with col1:
-                st.plotly_chart(tool.plot_return_reasons(), use_container_width=True)
-            with col2:
-                st.plotly_chart(tool.plot_root_cause_analysis(), use_container_width=True)
-            
+            _safe_chart(tool.plot_return_reasons, col1)
+            _safe_chart(tool.plot_root_cause_analysis, col2)
+
             # Row 2
             col1, col2 = st.columns(2)
-            with col1:
-                st.plotly_chart(tool.plot_timeline(), use_container_width=True)
-            with col2:
-                st.plotly_chart(tool.plot_sw_hw_breakdown(), use_container_width=True)
-            
-            # Row 3
-            st.plotly_chart(tool.plot_shipment_status(), use_container_width=True)
-            
+            _safe_chart(tool.plot_timeline, col1)
+            _safe_chart(tool.plot_sw_hw_breakdown, col2)
+
+            # Row 3 (shipment status — skipped automatically when not tracked)
+            _safe_chart(tool.plot_shipment_status)
+
             st.markdown("---")
         
         # Fault Wheel Analysis
         if show_fault_tree:
             st.header("Fault Wheel Analysis")
-            st.plotly_chart(tool.create_fault_tree(), use_container_width=True)
+            try:
+                st.plotly_chart(tool.create_fault_tree(), use_container_width=True)
+            except Exception as e:
+                st.warning(f"Fault wheel could not be rendered: {e}")
             st.markdown("---")
         
         # Data Table
