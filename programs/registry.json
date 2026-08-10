@@ -13,6 +13,13 @@
       "product": "eero Pro 7",
       "description": "Wifi7",
       "directory": "/Users/anishdut/Documents/Failure analysis tool/EFFA/programs/merci"
+    },
+    "Jupiter": {
+      "slug": "jupiter",
+      "display_name": "Jupiter",
+      "product": "Jupiter",
+      "description": "CSV data exploration \u2014 upload files and get starter visualizations",
+      "directory": "/Users/anishdut/Documents/Failure analysis tool/Failure Analyzer/programs/jupiter"
     }
   }
 }

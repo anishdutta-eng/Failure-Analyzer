@@ -11,6 +11,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from triage_assistant import render_triage_ui
 from debugger import render_debugger_ui
 from debug_analytics import render_analytics_ui
+from data_explorer import render_data_explorer
 from program_config import (
     get_program_list, register_program, get_selected_program,
     set_selected_program, load_registry, get_program_dir
@@ -410,8 +411,10 @@ def main():
         st.markdown("### 📑 View Selection")
         view_mode = st.radio(
             "Select View",
-            options=["📊 Dashboard", "🔧 Triage Assistant", "PCB Debugger", "📈 Debug Analytics", "📋 Failure Analysis Table"],
-            help="Switch between analysis dashboard, triage tool, PCB debugger, statistical analytics, and detailed failure table"
+            options=["📊 Dashboard", "🔧 Triage Assistant", "PCB Debugger", "📈 Debug Analytics",
+                     "📋 Failure Analysis Table", "🔭 Data Explorer"],
+            help="Switch between analysis dashboard, triage tool, PCB debugger, statistical analytics, "
+                 "the detailed failure table, and a schema-agnostic CSV data explorer"
         )
         
         if view_mode == "📊 Dashboard":
@@ -444,6 +447,17 @@ def main():
         
     # Main content
     if uploaded_file is not None:
+        # Data Explorer is schema-agnostic — read the CSV raw (do NOT run the
+        # field-returns loader, which requires Root_Cause / date columns).
+        if view_mode == "🔭 Data Explorer":
+            try:
+                raw_df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
+            except Exception as e:
+                st.error(f"Could not read the CSV: {e}")
+                return
+            render_data_explorer(raw_df, program_name)
+            return
+
         tool = FailureAnalysisTool()
         df = tool.load_data(uploaded_file, program_name)
         
