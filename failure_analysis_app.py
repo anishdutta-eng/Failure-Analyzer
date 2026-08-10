@@ -458,6 +458,28 @@ def main():
             render_data_explorer(raw_df, program_name)
             return
 
+        # Schema guard: the Dashboard / Triage / Table / Analytics views require
+        # the field-returns schema. If the uploaded CSV doesn't have it (e.g. a
+        # Jupiter tracker export), fall back to the schema-agnostic Data Explorer
+        # instead of crashing with a KeyError.
+        try:
+            _peek = pd.read_csv(io.BytesIO(uploaded_file.getvalue()), nrows=5)
+        except Exception as e:
+            st.error(f"Could not read the CSV: {e}")
+            return
+        _required = {"Root_Cause", "Return_Reason_Code", "User_Reported_Date"}
+        _missing = _required - set(_peek.columns)
+        if _missing:
+            st.info(
+                "This CSV doesn't match the failure-returns schema (missing columns: "
+                f"**{', '.join(sorted(_missing))}**), so the *{view_mode}* view can't be built "
+                "from it. Showing the **Data Explorer** instead — or pick the 🔭 Data Explorer "
+                "view in the sidebar for arbitrary CSVs like this one."
+            )
+            raw_df = pd.read_csv(io.BytesIO(uploaded_file.getvalue()))
+            render_data_explorer(raw_df, program_name)
+            return
+
         tool = FailureAnalysisTool()
         df = tool.load_data(uploaded_file, program_name)
         

@@ -20,6 +20,26 @@ import theme
 from theme import PURPLE, GREEN, MAGENTA, TEXT, TEXT_MUTED, CHART_SEQUENCE, CONTINUOUS_SCALE
 
 
+_NA_TOKENS = {"n/a", "na", "n.a.", "none", "null", "-", "--", "", "tbd", "?"}
+
+
+def _coerce_types(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a copy where object columns that are *mostly* numeric (after
+    dropping n/a-style tokens) are converted to numeric, so files like the
+    Jupiter tracker (with 'n/a' in numeric columns) chart correctly."""
+    out = df.copy()
+    for c in out.columns:
+        if out[c].dtype != object:
+            continue
+        s = out[c].astype(str).str.strip()
+        cleaned = s.mask(s.str.lower().isin(_NA_TOKENS))
+        num = pd.to_numeric(cleaned, errors="coerce")
+        non_null = cleaned.notna().sum()
+        if non_null > 0 and (num.notna().sum() / non_null) >= 0.8:
+            out[c] = num
+    return out
+
+
 def _detect_datetime_columns(df: pd.DataFrame, sample: int = 200) -> list:
     """Return columns that are datetime dtype or whose object values mostly
     parse as dates (>=80% of a sample)."""
@@ -67,6 +87,7 @@ def render_data_explorer(df: pd.DataFrame, program_name: str):
         st.warning("The uploaded file has no rows to explore.")
         return
 
+    df = _coerce_types(df)
     numeric_cols = df.select_dtypes(include="number").columns.tolist()
     datetime_cols = _detect_datetime_columns(df)
     categorical_cols = [c for c in df.columns
