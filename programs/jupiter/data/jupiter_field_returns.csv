@@ -1,0 +1,125 @@
+ID,User_Reported_Date,Return_Reason_Code,Unit_SN,Power_Adapter,PSU_MFG_WW,Jira_Ticket,Jira_Ticket_Reported,FA_Status,Shipment_Status,CM_Ticket,Root_Cause,Root_Cause_Reason,SW_Related_Issue,SW_JIRA,HW_Related_Issue,NTF,Comments
+1,,DAA,GGB21E0A33330AVK,,2333,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,"[EFFA Tracking] Root cause: C405 damaged. Time in field: 50 days. DAA: Soft Reset, Hard Reset, Swap outlets, Swap power cables. Standard TS for power issues was performed"
+2,,DAA,GGB21E0A339304JQ,,2339,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[EFFA Tracking] Root cause: C431 damaged. Time in field: 36 days. No light on the eero device (working before). No other 45 PSU to use. Purchased on Amazon Dec 19 2023. No power outage at time of report
+3,,DAA,GGB21E0A348700DX,,2348,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[EFFA Tracking] Root cause: C407 crack/ C342 burn. Time in field: 23 days.
+4,,DAA,GGB21E0A336203BW,,2336,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[EFFA Tracking] Root cause: C353. Time in field: 124 days. eero would not power on after moving to a new home
+5,,DAA,GGB21E0A336206KA,,2336,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[EFFA Tracking] Root cause: C969. Time in field: 68 days.
+6,,DAA,GGB21E0A336209H0,,2336,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[EFFA Tracking] Root cause: C1032. Time in field: 178 days. Power port on power strip burned out and damaged the PSU. No injuries
+7,,DAA,GGB21E0A337707X1,,2337,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[EFFA Tracking] Root cause: C431. Time in field: 53 days. No observable LED state
+8,,DAA,GGB21E0A3393010G,,2339,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,"[EFFA Tracking] Root cause: C1034. Time in field: 878 days. LED indicator off, standard DAA troubleshooting"
+9,,DAA,GGB21E0A351704EQ,,2351,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,"[EFFA Tracking] Root cause: C475. Time in field: 828 days. No LED indicators visible, standard DAA troubleshooting"
+10,,DAA,GGB21E0A348701A5,,2348,,,Resolved,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,"[EFFA Tracking] Root cause: C475. Time in field: 96 days. No LED indicators, standard DAA troubleshooting"
+11,,Cosmetic issue - Pink BC,GGB21E0A337405CA,,,,,Resolved,,,Root Cause Identified,Material / Chemical,NO,,YES,NO,[EFFA Tracking] Root cause: overoxidation of phenolic antioxidants. Customer report of Jupiter pink bottom case
+12,,DAA,GGB21E0A333308VF,,2333,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: Customer Fraud. Time in field: 998 days. eero Dead After Arrival after updating firmware
+13,,DAA,GGB21E0A33330409,,2333,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: Customer Fraud. Time in field: 5 days. eero Dead After Arrival after power surge
+14,,DAA,GGB21E0A3336069S,,2333,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: Customer Fraud. Time in field: 26 days. Customer reported network offline due to node not powering on with PSU
+15,,Thermal reboots,GGB21E0A33620926,,2336,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: Customer placement. Time in field: 978 days.
+16,,DAA,GGB21E0A33330AMQ,,2333,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: Customer Fraud. Time in field: 7 days.
+17,,Ethernet Port Issue: Poor Throughput,GGB21E0A3333084N,,2333,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF - No SW/HW issue. Time in field: 997 days. New FW release apparently fixed the issue per customer
+18,,DOA,GGB21E0A337705XV,,2337,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF - unit online on a different customer account. Time in field: 904 days.
+19,,Stuck Flashing White LED,GGB21E0A337707R3,,2337,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF. Time in field: 68 days.
+20,,Stuck Flashing White LED,GGB21E0A338702QH,,2338,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF. Time in field: 66 days.
+21,,Flashing blue - eero not found,GGB21E0A337707S9,,,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF.
+22,,Ethernet Port Issue: Poor Throughput,GGB21E0A34870045,,2348,,,Not Returned,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF - Still online 5.8.2024. Time in field: 874 days.
+23,,Ethernet Port Issue (low negotiation speed),GGB21E0A33930246,,2339,,,NTF,,,No Failure Found,,,,,YES,[EFFA Tracking] Root cause: NTF. Time in field: 847 days. Slow negotiated wired speeds
+24,,Stability issue,GGB21E0A339303NF,,2339,,,NTF,,,No Failure Found,,,,,YES,"[EFFA Tracking] Root cause: NTF. Time in field: 205 days. Intermittent reboots, unstable connection, zyxel G1920-48HP smart switch issue"
+25,,Power Issue (PSU Defective),GGB21E0A333305TA,,2333,,,Not Returned,,,Won't do,,,,,NO,[EFFA Tracking] Root cause: Won't Do. Time in field: 996 days. PSU returned to A.com directly; analyzed unit is the replacement standalone 45W
+26,,DAA,GGB21E0A336206MS,,2336,,,Not Returned,,,Won't do,,,,,NO,"[EFFA Tracking] Root cause: Won't Do. Time in field: 59 days. Customer reports one Jupiter does not turn on. Tried different socket and known-good PSU, no LED."
+27,,DAA,GGB21E0A3393008E,,2339,,,Lost/Damage,,,Won't do,,,,,NO,[EFFA Tracking] Root cause: Won't Do. Time in field: 862 days. swapped PSU no LED; swapped outlet no LED; hard reset no LED
+28,,Stuck Flashing white LED,GGB21E0A3507062R,,,,,Not Returned,,,Won't do,,,,,NO,[EFFA Tracking] Root cause: Won't Do. Never set up per CX notes
+29,,DAA,GGB21E0A3387047K,,2338,,,Not Returned,,,Won't do,,,,,NO,[EFFA Tracking] Root cause: Won't Do. Time in field: 135 days. No LED indicators
+30,,DAA,GGB21E0A33870557,,2338,,,Resolved,,,To Do,,,,,NO,"[EFFA Tracking] Time in field: 116 days. No LED, eero not powering up. Customer resistant to troubleshooting"
+31,,DAA,GGB21E0A3362005H,,2336,,,FA in progress,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 139 days.
+32,,DAA,GGB21E0A3387065X,,2338,,,FA in progress,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 124 days.
+33,,Ethernet Port Issue - Slow speeds,GGB21E0A3387022K,,2338,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 1 days. Device speeds slower than expected
+34,,DAA,GGB21E0A415300QG,,,,,Not Returned,,,To Do,,,,,NO,"[EFFA Tracking] No LED indicator visible, TS for DAA. Surge initially"
+35,,Unable to update firmware,GGB21E0A4014013B,,2401,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 817 days. flashing white after sending OTA update
+36,,DAA,GGB21E0A3402020N,,2340,,,FA in progress,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 178 days. No response from LED indicator
+37,,DAA,GGB21E0A33930576,,2339,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 133 days. No LED indicator response
+38,,Ethernet Port Issue,GGB21E0A3387033K,,2338,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 726 days. Ports not responding; wired connections fail across ports and cables
+39,,Ethernet Port Issue,GGB21E0A34030051,,2340,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 997 days. Ethernet ports do not negotiate properly with wired devices
+40,,Ethernet Port Issue,GGB21E0A341700K0,,2341,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 37 days. Wired devices failing to connect to Kitchen node. Wifi works
+41,,Stuck Flashing Blue,GGB21E0A416302CT,,,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Unable to set up
+42,,DAA,GGB21E0A340204BJ,,2340,,,Not Returned,,,To Do,,,,,NO,[EFFA Tracking] Time in field: 131 days.
+43,,DOA,GGB21E0A339304W5,,,,,Resolved,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[EFFA Tracking] Root cause: SoC failure. Customer report of US BB Jupiter defective out of box and would not power on
+44,,DAA,GGB21E0A337709X8,,2337,,,Resolved,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[EFFA Tracking] Root cause: U12 MPS Buck Convertor IC failure. Time in field: 56 days. Node went offline and did not recover after multiple power cycles
+45,,DAA,GGB21E0A333308P8,,2333,,,Resolved,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,"[EFFA Tracking] Root cause: U21 Marvel Phy. Time in field: 235 days. No LED visible, abrupt"
+46,,Unable to reach internet error,GGB21E0A333700NN,,2333,,,Resolved,,,Root Cause Identified,Software / Configuration,YES,,NO,NO,[EFFA Tracking] Root cause: dhclient fails when system clock is near max uint32. Time in field: 887 days. Node disconnected from mesh; out of range on re-add; mesh communication problem
+47,,Stuck Flashing white LED,GGB21E0A33650470,,2336,,,Resolved,,,Root Cause Identified,Software / Configuration,YES,,NO,NO,[EFFA Tracking] Root cause: dhclient fails when system clock is near max uint32. Time in field: 697 days. No OTA updates since 12/15/23; customer has generator during power outages
+48,,Will not get a session,GGB21E0A336203VP,,2336,,,Resolved,,,Root Cause Identified,Software / Configuration,YES,,NO,NO,[EFFA Tracking] Root cause: dhclient fails when system clock is near max uint32. Time in field: 59 days. bookshelf corruption issue/nodelib exception
+49,,Stuck Flashing White LED,GGB21E0A409702MN,,2409,,,Done,,,Root Cause Identified,Software / Configuration,YES,,NO,NO,[EFFA Tracking] Root cause: my py baseline config issue. Time in field: 697 days. Fail to set up. Fix introduced in eero OS v7.4.0+
+50,,Ethernet Port Issue - Slow speeds,GGB21E0A339301NR,,2339,,,Resolved,,,Root Cause Identified,Software / Configuration,YES,,NO,NO,[EFFA Tracking] Root cause: ethernet data flow control not enabled in Modem/ONT. Time in field: 905 days. Ethernet port speed issue
+51,,Ethernet Port Issue - Slow speeds,GGB21E0A406201J7,,2406,,,Resolved,,,Root Cause Identified,Software / Configuration,YES,,NO,NO,[EFFA Tracking] Root cause: ethernet data flow control not enabled in Modem/ONT. Time in field: 189 days. Slower than expected speeds
+52,,DAA,GGB21E0A3402047B,,,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C457 short to GND.
+53,,DAA,GGB21E0A339300X6,,2339,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C404 short to GND. Time in field: 182 days.
+54,,DAA,GGB21E0C442400HK,,2442,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 94 days.
+55,,DAA,GGB21E0A340200FD,,,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C617 short to GND.
+56,,DAA,GGB21E0A415300KW,,2415,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C404 short to GND. Time in field: 42 days.
+57,,DAA,GGB21E0C501604H9,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 193 days.
+58,,DAA,GGB21E0C4417007G,,2441,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 102 days.
+59,,DAA,GGB21E0C501605G9,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401 short to GND. Time in field: 11 days.
+60,,DAA,GGB21E0B4373005H,,2437,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 157 days.
+61,,DAA,GGB21E0C501606FX,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 56 days.
+62,,DAA,GGB21E0C501602RV,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 101 days.
+63,,DAA,GGB21E0C439703HX,,2439,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 150 days.
+64,,DAA,GGB21E0C502702D9,,2502,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short to GND. Time in field: 72 days.
+65,,DAA,GGB21E0C501601AD,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401 short to GND. Time in field: 145 days.
+66,,DAA,GGB21E0C441701RV,,2441,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C443 short to GND. Time in field: 104 days.
+67,,DAA,GGB21E0C501604MA,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401 short to GND. Time in field: 129 days.
+68,,DAA,GGB21E0C442401VK,,2442,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C443. Time in field: 90 days.
+69,,DAA,GGB21E0C502701ET,,2502,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 116 days.
+70,,DAA,GGB21E0C502402A2,,2502,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C443 short to GND. Time in field: 114 days.
+71,,DAA,GGB21E0C50160610,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 133 days.
+72,,DAA,GGB21E0C5016059S,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401 short. Time in field: 55 days.
+73,,DAA,GGB21E0C502702Q6,,2502,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C457 short to GND. Time in field: 51 days.
+74,,DAA,GGB21E0C5016063T,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401 short. Time in field: 144 days.
+75,,DAA,GGB21E0C501606GB,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 39 days.
+76,,DAA,GGB21E0C501604N8,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 64 days.
+77,,DAA,GGB21E0C502702D6,,2502,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 56 days.
+78,,DAA,GGB21E0C4424004K,,2442,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 201 days.
+79,,DAA,GGB21E0C5016075N,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 172 days.
+80,,DAA,GGB21E0C5016066S,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 216 days.
+81,,DAA,GGB21E0C501602J1,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401 short. Time in field: 148 days.
+82,,DAA,GGB21E0C5016024F,,2501,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448 short. Time in field: 127 days.
+83,,DAA,GGB21E0C504704KQ,,2504,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448. Time in field: 277 days.
+84,,DAA,GGB21E0C510706GR,,2510,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448. Time in field: 196 days.
+85,,DAA,GGB21E0C512301HG,,2512,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C448. Time in field: 219 days.
+86,,DAA,GGB21E0C506503PV,,2506,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 240 days.
+87,,DAA,GGB21E0C504700R2,,2504,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 310 days.
+88,,DAA,GGB21E0C5275040B,,2527,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 61 days.
+89,,DAA,GGB21E0C502702K1,,2502,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 331 days.
+90,,DAA,GGB21E0C512302QF,,2512,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 133 days.
+91,,DAA,GGB21E0C510706P6,,2510,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 263 days.
+92,,DAA,GGB21E0C507500DS,,2507,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 249 days.
+93,,DAA,GGB21E0C508509B1,,2508,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C401. Time in field: 281 days.
+94,,DAA,GGB21E0A4112030A,,2411,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C969. Time in field: 557 days.
+95,,DAA,GGB21E0A33930479,,2339,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C405. Time in field: 600 days.
+96,,DAA,GGB21E0A336207PJ,,2336,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C405. Time in field: 655 days.
+97,,DAA,GGB21E0A336200KS,,2336,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C353. Time in field: 607 days.
+98,,DAA,GGB21E0A336206DA,,2336,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C457. Time in field: 688 days.
+99,,DAA,GGB21E0A3393059M,,2339,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C457. Time in field: 613 days.
+100,,DAA,GGB21E0A3365052M,,2336,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C360. Time in field: 704 days.
+101,,DAA,GGB21E0A336203VX,,2336,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C1032. Time in field: 790 days.
+102,,DAA,GGB21E0A348700F4,,2348,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C341. Time in field: 709 days.
+103,,DAA,GGB21E0A33770A98,,2337,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C459. Time in field: 665 days.
+104,,DAA,GGB21E0A333603BR,,2333,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C620. Time in field: 816 days.
+105,,DAA,GGB21E0A3472018H,,2347,,,Fail,,,Root Cause Identified,Capacitor Short / Damage,NO,,YES,NO,[WRR Triage FA] Root cause: C618. Time in field: 1 days.
+106,,Reset button,GGB21E0A33870123,,2338,,,Pass,,,No Failure Found,,,,,YES,[WRR Triage FA] Root cause: NTF. Time in field: 61 days.
+107,,DAA,GGB21E0A350400WX,,2350,,,Pass,,,No Failure Found,,,,,YES,[WRR Triage FA] Root cause: NTF. Time in field: 110 days.
+108,,DAA,GGB21E0C5225064R,,2522,,,Pass,,,No Failure Found,,,,,YES,[WRR Triage FA] Root cause: NTF. Time in field: 152 days.
+109,,DAA,GGB21E0C4453039V,,2445,,,Pass,,,No Failure Found,,,,,YES,[WRR Triage FA] Root cause: NTF. Time in field: 145 days.
+110,,DAA,GGB21E0C511703R3,,2511,,,Fail,,,To Do,,,,,NO,[WRR Triage FA] Time in field: 10 days.
+111,,Stuck Flashing White,GGB21E0C515300F3,,2515,,,Fail,,,To Do,,,,,NO,[WRR Triage FA] Time in field: 354 days.
+112,,DAA,GGB21E0A348700NS,,2348,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4 issue. Time in field: 867 days.
+113,,DAA,GGB21E0A3393035D,,2339,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4 issue. Time in field: 103 days.
+114,,DAA,GGB21E0A333305P0,,2333,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 570 days.
+115,,DAA,GGB21E0A33620664,,2336,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 826 days.
+116,,DAA,GGB21E0A338704VQ,,2338,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 759 days.
+117,,DAA,GGB21E0C545701B9,,2545,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 169 days.
+118,,DAA,GGB21E0A338704WM,,2338,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 726 days.
+119,,DAA,GGB21E0A3504032Q,,2350,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 572 days.
+120,,DAA,GGB21E0A350704EJ,,2350,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 643 days.
+121,,DAA,GGB21E0A42170257,,2421,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 481 days.
+122,,DAA,GGB21E0A421703QH,,2421,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 461 days.
+123,,DAA,GGB21E0B431303EN,,2431,,,Fail,,,Root Cause Identified,SoC / IC Failure,NO,,YES,NO,[WRR Triage FA] Root cause: U1+U4. Time in field: 498 days.
+124,,DAA,GGB21E0A401403AJ,,2401,,,Fail,,,Root Cause Identified,Surge Damage,NO,,YES,NO,"[WRR Triage FA] Root cause: Surge damage - C527, C1321, C1322, C1323, R737, R738, R739, R740, R800, D4. Time in field: 139 days."
