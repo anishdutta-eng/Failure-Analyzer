@@ -43,64 +43,32 @@ NON_NODE_KEYS = {"POE_POWER_UBOOT", "POE_POWER_QSDK"}
 # schematic_path string vs. inferred (which the UI flags for engineer review).
 # 'seq_after' = must power up after this rail; 'co_requires' = also needs these.
 # --------------------------------------------------------------------------- #
-POWER_TREE = {
-    "V_POE_POWER_RAIL":        {"parent": ROOT,                 "verified": True},
-    "V_TP1205_POE_5V":         {"parent": "V_POE_POWER_RAIL",   "verified": True},
-    "V_TP55_STBY":             {"parent": "V_POE_POWER_RAIL",   "verified": True},
-    # Miami core domain (Buck 1 from 5V bus)
-    "V_TP579_VDD_CX":          {"parent": "V_TP1205_POE_5V",    "verified": True},
-    "V_TP27_VDD_SOC_CX":       {"parent": "V_TP579_VDD_CX",     "verified": True},
-    "V_TP29_VDD_SOC_MX":       {"parent": "V_TP579_VDD_CX",     "verified": True},
-    "V_TP578_VDD1V95_PMU":     {"parent": "V_TP1205_POE_5V",    "verified": True},
-    # DDR4 (Buck 3 from 5V; VPP sequenced after VDD_DDR)
-    "V_TP574_VDD_DDR":         {"parent": "V_TP1205_POE_5V",    "verified": True},
-    "V_TP576_VDD_LDO_2P5_VPP": {"parent": "V_TP1205_POE_5V",    "verified": True,
-                                "seq_after": "V_TP574_VDD_DDR"},
-    # Shared 1.8V (Buck 2) and analog LDOs
-    "V_TP503_VDD1P8_NAPA":     {"parent": "V_TP1205_POE_5V",    "verified": True},
-    "V_TP28_VAA_0P8":          {"parent": "V_TP503_VDD1P8_NAPA", "verified": False},
-    "V_TP36_VAA_1P2":          {"parent": "V_TP503_VDD1P8_NAPA", "verified": False},
-    # Ethernet PHY (Buck 5 from 5V; also needs shared 1.8V)
-    "V_TP504_VDD1P05_NAPA":    {"parent": "V_TP1205_POE_5V",    "verified": True,
-                                "co_requires": ["V_TP503_VDD1P8_NAPA"]},
-    # Waikiki WiFi (Buck 6 from 5V) + PCIe rails
-    "V_TP573_DVDD3P3":         {"parent": "V_TP1205_POE_5V",    "verified": True},
-    "V_TP535_DVDD5":           {"parent": "V_TP1205_POE_5V",    "verified": True},
-    "V_TP589_DVDD3P3_BZT":     {"parent": "V_TP573_DVDD3P3",    "verified": True},
-    "V_TP34_VDD_PCIE_0P925":   {"parent": "V_TP573_DVDD3P3",    "verified": False},
-    "V_TP30_VDD_PCIE_1P8":     {"parent": "V_TP573_DVDD3P3",    "verified": False},
-    "V_TP31_VDD_1V8_PX3":      {"parent": "V_TP503_VDD1P8_NAPA", "verified": False},
-    # RF power amps (Buck 8 / Buck 7 from 5V)
-    "V_TP569_VDD_XPA":         {"parent": "V_TP1205_POE_5V",    "verified": True},
-    "V_TP577_AVDD3P3_2G":      {"parent": "V_TP1205_POE_5V",    "verified": True},
-    # LED (from a 3.3V bus — parentage inferred, review)
-    "V_TP590_LED":             {"parent": "V_TP573_DVDD3P3",    "verified": False},
-}
+# ---------------------------------------------------------------------------
+# The power-tree topology is PER-PROGRAM and is supplied by the caller via a
+# `graph` bundle loaded from that program's board pack:
+#
+#   graph = {
+#     "root": "<source sentinel>",       # upstream of the board (e.g. PSE input)
+#     "tree": {rail: {"parent": ..., "verified": bool,
+#                     "seq_after": rail, "co_requires": [rails]}},
+#     "boot_critical": [rails...],       # must pass or the unit is dead
+#     "complaint_branches": {complaint: [rails...]},
+#   }
+#
+# It is NOT hardcoded here. Previously this module held Snowbird's rails, which
+# meant every program was localized against Snowbird's topology.
+# ---------------------------------------------------------------------------
 
-# Boot-critical chain: if any of these fail, the unit is dead / won't boot.
-# Ordered top-down = the guided minimal-probe sequence for a "dead" complaint.
-BOOT_CRITICAL = [
-    "V_POE_POWER_RAIL",
-    "V_TP1205_POE_5V",
-    "V_TP579_VDD_CX",
-    "V_TP27_VDD_SOC_CX",
-    "V_TP29_VDD_SOC_MX",
-    "V_TP578_VDD1V95_PMU",
-    "V_TP574_VDD_DDR",
-    "V_TP576_VDD_LDO_2P5_VPP",
-    "V_TP503_VDD1P8_NAPA",
-]
+EMPTY_GRAPH = {"root": ROOT, "tree": {}, "boot_critical": [], "complaint_branches": {}}
 
-# Complaint -> prioritized probe branch (top-down).
-COMPLAINT_BRANCHES = {
-    "DEAD": BOOT_CRITICAL,
-    "DOA": BOOT_CRITICAL,
-    "REBOOTS": ["V_POE_POWER_RAIL", "V_TP1205_POE_5V", "V_TP579_VDD_CX", "V_TP574_VDD_DDR"],
-    "NO_WIFI": ["V_TP1205_POE_5V", "V_TP573_DVDD3P3", "V_TP535_DVDD5",
-                "V_TP589_DVDD3P3_BZT", "V_TP30_VDD_PCIE_1P8", "V_TP503_VDD1P8_NAPA"],
-    "NO_ETHERNET": ["V_TP1205_POE_5V", "V_TP503_VDD1P8_NAPA", "V_TP504_VDD1P05_NAPA"],
-    "NO_RF": ["V_TP1205_POE_5V", "V_TP569_VDD_XPA", "V_TP577_AVDD3P3_2G"],
-}
+
+def _g(graph):
+    """Normalize a graph bundle, tolerating None/partial input."""
+    g = dict(EMPTY_GRAPH)
+    if graph:
+        g.update({k: v for k, v in graph.items() if v is not None})
+    return g
+
 
 COMPLAINTS = {
     "DEAD": "Dead (no LED, no boot)",
@@ -115,40 +83,46 @@ COMPLAINTS = {
 # --------------------------------------------------------------------------- #
 # Graph helpers
 # --------------------------------------------------------------------------- #
-def ancestors(node: str):
-    """Yield power-tree ancestors of `node`, nearest first, up to (not incl.) ROOT."""
+def ancestors(node: str, graph=None):
+    """Yield power-tree ancestors of `node`, nearest first, up to (not incl.) root."""
+    g = _g(graph)
+    tree, root = g["tree"], g["root"]
     seen = set()
-    cur = POWER_TREE.get(node, {}).get("parent")
-    while cur and cur != ROOT and cur not in seen:
+    cur = tree.get(node, {}).get("parent")
+    while cur and cur != root and cur not in seen:
         seen.add(cur)
         yield cur
-        cur = POWER_TREE.get(cur, {}).get("parent")
+        cur = tree.get(cur, {}).get("parent")
 
 
-def children_of(node: str):
-    return [k for k, v in POWER_TREE.items() if v.get("parent") == node]
+def children_of(node: str, graph=None):
+    return [k for k, v in _g(graph)["tree"].items() if v.get("parent") == node]
 
 
-def validate_tree(test_points: dict) -> dict:
+def validate_tree(test_points: dict, graph=None) -> dict:
     """Integrity check: every voltage test point should be in the tree, parents
     must exist, and there must be no cycles. Returns issues + unverified edges."""
+    g = _g(graph)
+    tree, root = g["tree"], g["root"]
     issues = []
     unverified = []
+    if not tree:
+        return {"issues": ["No power tree defined for this program."], "unverified_edges": []}
     # Cycle / missing-parent check
-    for node, meta in POWER_TREE.items():
+    for node, meta in tree.items():
         parent = meta.get("parent")
-        if parent != ROOT and parent not in POWER_TREE:
+        if parent != root and parent not in tree:
             issues.append(f"{node}: parent '{parent}' not in tree")
         if not meta.get("verified", False):
             unverified.append(node)
         # walk to root to detect cycles
         seen, cur = set(), node
-        while cur and cur != ROOT:
+        while cur and cur != root:
             if cur in seen:
                 issues.append(f"cycle detected at {cur}")
                 break
             seen.add(cur)
-            cur = POWER_TREE.get(cur, {}).get("parent")
+            cur = tree.get(cur, {}).get("parent")
     # Coverage: voltage TPs not modeled
     for key, tp in test_points.items():
         if key in NON_NODE_KEYS:
@@ -157,8 +131,8 @@ def validate_tree(test_points: dict) -> dict:
             continue
         if tp.get("monitor"):
             continue  # monitor-only pins (e.g. USB-C orientation) are not power rails
-        if key not in POWER_TREE:
-            issues.append(f"{key}: voltage test point not modeled in POWER_TREE")
+        if key not in tree:
+            issues.append(f"{key}: voltage test point not modeled in the power tree")
     return {"issues": issues, "unverified_edges": unverified}
 
 
@@ -234,20 +208,22 @@ def open_or_short(r_to_gnd: float) -> dict:
 # --------------------------------------------------------------------------- #
 # Fault localization
 # --------------------------------------------------------------------------- #
-def localize_fault(readings: dict, test_points: dict, evaluate_fn) -> dict:
+def localize_fault(readings: dict, test_points: dict, evaluate_fn, graph=None) -> dict:
     """Find the topmost root fault(s) and suppress downstream consequences.
 
     A failed node is a ROOT fault if none of its measured power-tree ancestors
     also failed; otherwise it is a CONSEQUENCE of the highest failing ancestor.
     """
+    g = _g(graph)
+    tree, boot = g["tree"], g["boot_critical"]
     statuses = classify(readings, test_points, evaluate_fn)
-    failed = {k for k, s in statuses.items() if s == "fail" and k in POWER_TREE}
-    warned = {k for k, s in statuses.items() if s == "warn" and k in POWER_TREE}
+    failed = {k for k, s in statuses.items() if s == "fail" and k in tree}
+    warned = {k for k, s in statuses.items() if s == "warn" and k in tree}
 
     root_faults, consequences = [], []
     for node in failed:
         failing_ancestor = None
-        for anc in ancestors(node):
+        for anc in ancestors(node, graph):
             if anc in failed:
                 failing_ancestor = anc  # keep walking; last one = highest failing
         if failing_ancestor is None:
@@ -257,12 +233,12 @@ def localize_fault(readings: dict, test_points: dict, evaluate_fn) -> dict:
 
     # Rank root faults: closest to ROOT first (fewest ancestors), critical first
     def depth(n):
-        return sum(1 for _ in ancestors(n))
-    root_faults.sort(key=lambda n: (depth(n), n not in BOOT_CRITICAL))
+        return sum(1 for _ in ancestors(n, graph))
+    root_faults.sort(key=lambda n: (depth(n), n not in boot))
 
     # Verdict
-    measured_critical = [k for k in BOOT_CRITICAL if k in statuses]
-    critical_failed = [k for k in BOOT_CRITICAL if statuses.get(k) == "fail"]
+    measured_critical = [k for k in boot if k in statuses]
+    critical_failed = [k for k in boot if statuses.get(k) == "fail"]
     if not readings:
         verdict = "no_data"
     elif critical_failed:
@@ -286,21 +262,23 @@ def localize_fault(readings: dict, test_points: dict, evaluate_fn) -> dict:
     }
 
 
-def next_probe(readings: dict, complaint: str, test_points: dict, evaluate_fn) -> dict | None:
+def next_probe(readings: dict, complaint: str, test_points: dict, evaluate_fn, graph=None) -> dict | None:
     """Guided minimal-probe: the single best next node to measure.
 
     Walk the complaint's branch top-down and return the first UNMEASURED node
     whose parent is either ROOT or already measured PASS/WARN. If a measured
     parent already FAILED, we've localized — return None (stop probing)."""
-    branch = COMPLAINT_BRANCHES.get(complaint, BOOT_CRITICAL)
+    g = _g(graph)
+    tree, root = g["tree"], g["root"]
+    branch = g["complaint_branches"].get(complaint) or g["boot_critical"]
     statuses = classify(readings, test_points, evaluate_fn)
 
     for node in branch:
         if node in readings:
             continue  # already measured
-        parent = POWER_TREE.get(node, {}).get("parent")
-        parent_status = statuses.get(parent) if parent != ROOT else "pass"
-        if parent == ROOT or parent is None or parent_status in ("pass", "warn", None):
+        parent = tree.get(node, {}).get("parent")
+        parent_status = statuses.get(parent) if parent != root else "pass"
+        if parent == root or parent is None or parent_status in ("pass", "warn", None):
             tp = test_points.get(node, {})
             return {
                 "node": node,
@@ -309,15 +287,14 @@ def next_probe(readings: dict, complaint: str, test_points: dict, evaluate_fn) -
                 "loc": tp.get("loc"),
                 "spec": {"lsl": tp.get("lsl"), "nom": tp.get("nom"),
                          "usl": tp.get("usl"), "unit": tp.get("unit")},
-                "rationale": _probe_rationale(node, parent, parent_status),
+                "rationale": _probe_rationale(node, parent, parent_status, root),
             }
     return None
 
 
-def _probe_rationale(node, parent, parent_status):
-    if parent == ROOT:
+def _probe_rationale(node, parent, parent_status, root=ROOT):
+    if parent == root:
         return "Start at the board's power input — confirm power is actually reaching the board."
-    pname = POWER_TREE.get(parent, {})
     return (f"Its upstream source measured OK, so probe here next to see if the fault "
             f"is at this stage or further downstream.")
 
@@ -348,7 +325,7 @@ def _mech_score(mech_id, rank, obs_text):
 
 
 def deduce(readings: dict, test_points: dict, evaluate_fn, schematic_db: dict,
-           observations: str = "", resistances: dict | None = None) -> dict:
+           observations: str = "", resistances: dict | None = None, graph=None) -> dict:
     """Produce ranked, cited failure hypotheses for the localized fault(s).
 
     `resistances` optionally maps node_key -> R-to-ground (Ohms) so dead rails
@@ -356,11 +333,13 @@ def deduce(readings: dict, test_points: dict, evaluate_fn, schematic_db: dict,
     environmental notes that bias mechanism ranking.
     """
     resistances = resistances or {}
-    loc = localize_fault(readings, test_points, evaluate_fn)
+    g = _g(graph)
+    tree = g["tree"]
+    loc = localize_fault(readings, test_points, evaluate_fn, graph)
     hypotheses = []
 
     targets = loc["root_faults"] or [k for k, s in loc["statuses"].items()
-                                      if s in ("fail", "warn") and k in POWER_TREE]
+                                      if s in ("fail", "warn") and k in tree]
 
     for node in targets:
         tp = test_points.get(node, {})
@@ -439,9 +418,9 @@ def _verdict_text(loc: dict) -> str:
 # --------------------------------------------------------------------------- #
 def daa_summary(readings: dict, test_points: dict, evaluate_fn, schematic_db: dict,
                 observations: str = "", resistances: dict | None = None,
-                complaint: str = "DEAD") -> dict:
+                complaint: str = "DEAD", graph=None) -> dict:
     """Structured DAA localization block for inclusion in the FA report."""
-    d = deduce(readings, test_points, evaluate_fn, schematic_db, observations, resistances)
+    d = deduce(readings, test_points, evaluate_fn, schematic_db, observations, resistances, graph)
     top = d["hypotheses"][0] if d["hypotheses"] else None
     return {
         "complaint": COMPLAINTS.get(complaint, complaint),

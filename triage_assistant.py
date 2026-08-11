@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from program_config import get_selected_program
+import board_pack
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import cross_val_score, StratifiedKFold
@@ -111,21 +112,12 @@ class TriageAssistant:
         self.model_type = None
         self.n_training_cases = 0
         
-        # Technical knowledge base for eero Outdoor (Snowbird)
-        self.technical_specs = {
-            'product': 'eero Outdoor 7 (Snowbird)',
-            'type': 'Outdoor WiFi 7 Access Point',
-            'rating': 'IP66 (dust-tight, water-resistant)',
-            'temp_range': '-40°F to 131°F (-40°C to 55°C)',
-            'wifi': 'Dual-band WiFi 7 (2.4GHz/5GHz), 2x2 MIMO',
-            'speed': 'Up to 2.1 Gbps aggregate',
-            'coverage': '~15,000 sq ft outdoor',
-            'power': 'PoE+ (802.3at), 30W outdoor injector',
-            'ethernet': '2.5 GbE port',
-            'devices': '100+ concurrent connections',
-            'storage': 'eMMC flash memory',
-            'security': 'WPA3, TrueMesh, automatic updates'
-        }
+        # Product specs come from the SELECTED PROGRAM's board pack — never
+        # hardcoded, so Merci/Jupiter don't display Snowbird's specifications.
+        _prog = get_selected_program()
+        self.program = _prog
+        self.technical_specs = board_pack.product_specs(_prog) or {}
+        self.has_product_specs = bool(self.technical_specs)
         
         # Technical failure mode database with DFMEA analysis
         self.failure_modes = {
@@ -187,13 +179,13 @@ class TriageAssistant:
             'liquid_ingress': {
                 'name': 'Liquid Ingress / Moisture Damage',
                 'symptoms': ['liquid', 'water', 'ingress', 'corrosion', 'moisture', 'condensation'],
-                'causes': ['Improper M22 gland sealing', 'Incorrect orientation', 'Physical damage to enclosure', 'Condensation', 'IP66 seal failure'],
+                'causes': ['Improper cable-gland sealing', 'Incorrect orientation', 'Physical damage to enclosure', 'Condensation', 'Enclosure seal failure'],
                 'severity': 8,  # DFMEA: High - corrosion, shorts
                 'occurrence': 4,  # Medium (installation dependent)
                 'detection': 3,  # Visual inspection
                 'rpn': 96,
                 'tests': ['Visual inspection', 'FTIR analysis', 'Moisture detection', 'Seal integrity check', 'Corrosion analysis'],
-                'resolution': 'Verify IP66 seal, check orientation, replace if damaged'
+                'resolution': 'Verify enclosure seal, check orientation, replace if damaged'
             },
             'eipd_eos': {
                 'name': 'EIPD/EOS (Electrical Overstress)',
@@ -296,26 +288,15 @@ class TriageAssistant:
             }
         }
         
-        # LED status codes (eero specific)
-        self.led_codes = {
-            'solid_white': 'Normal operation, connected to internet',
-            'blinking_white': 'Booting up or attempting connection',
-            'solid_blue': 'Setup mode, waiting for configuration',
-            'blinking_blue': 'Bluetooth pairing mode, ready for app',
-            'solid_green': 'Optimal operation, all systems normal',
-            'blinking_yellow': 'Soft reset in progress or weak connection',
-            'solid_yellow': 'No internet connection detected',
-            'blinking_red': 'No internet, check upstream connection',
-            'solid_red': 'Critical error, hardware or connection failure',
-            'no_light': 'No power or hardware failure'
-        }
+        # LED status codes also come from the program's board pack.
+        self.led_codes = board_pack.led_codes(_prog) or {}
         
         # Technical search keywords (based on actual data)
         self.technical_keywords = {
             'memory': ['emmc', 'flash', 'memory', 'storage', 'corruption', 'firmware'],
             'power': ['poe', 'power', 'voltage', 'injector', 'adapter', 'goldfinch', 'psu', 'exothermic', 'outlet'],
             'connectivity': ['cloud', 'registration', 'connect', 'network', 'wifi', 'ethernet', 'flashing blue', 'flashing white'],
-            'environmental': ['liquid', 'water', 'ingress', 'temperature', 'thermal', 'weather', 'm22', 'seal'],
+            'environmental': ['liquid', 'water', 'ingress', 'temperature', 'thermal', 'weather', 'gland', 'seal'],
             'hardware': ['component', 'eipd', 'eos', 'damage', 'physical', 'burn', 'capacitor', 'solder'],
             'performance': ['throughput', 'speed', 'slow', 'performance', 'coverage', 'interference', 'poor'],
             'installation': ['mount', 'bracket', 'setup', 'installation', 'qr code']
@@ -767,17 +748,29 @@ class TriageAssistant:
         failure_modes = self.identify_failure_mode(symptom_text)
         
         # Common initial steps
+        # Program-specific details are pulled from the board pack so these steps
+        # never reference another program's serial format, PSU, or enclosure.
+        specs = self.technical_specs or {}
+        sn_fmt = specs.get("serial_format")
+        adapters = ", ".join(specs.get("power_adapters", [])[:3])
+        rating = specs.get("rating")
+        temp_range = specs.get("temp_range")
+
         steps.append("1. **Initial Assessment**")
-        steps.append("   - Verify unit serial number (GGC3530X format)")
-        steps.append("   - Check warranty status and manufacturing week (PSU_MFG_WW)")
+        steps.append(f"   - Verify unit serial number{f' ({sn_fmt} format)' if sn_fmt else ''}")
+        steps.append("   - Check warranty status and manufacturing week")
         steps.append("   - Document LED status and behavior pattern")
-        steps.append("   - Record power adapter model (Goldfinch/PoE injector)")
-        
+        steps.append(f"   - Record power adapter model{f' ({adapters})' if adapters else ''}")
+
         steps.append("\n2. **Environmental & Physical Inspection**")
-        steps.append("   - Verify IP66 seal integrity (M22 gland properly tightened)")
+        if rating:
+            steps.append(f"   - Verify enclosure seal integrity (rated {rating})")
+        else:
+            steps.append("   - Verify enclosure/seal integrity")
         steps.append("   - Check unit orientation (correct mounting per spec)")
         steps.append("   - Inspect for physical damage, corrosion, or liquid ingress")
-        steps.append("   - Verify operating temperature range (-40°F to 131°F)")
+        if temp_range:
+            steps.append(f"   - Verify operating temperature range ({temp_range})")
         steps.append("   - Document installation environment (direct sunlight, exposure)")
         
         # Failure mode specific steps
@@ -802,7 +795,7 @@ class TriageAssistant:
             steps.append("\n4. **DAA (Dead After Arrival) Protocol**")
             steps.append("   **Definition:** Unit failed after initial operation (not DOA)")
             steps.append("   - Verify PoE+ power delivery (802.3at, 30W minimum)")
-            steps.append("   - Test with known-good PoE injector (Goldfinch or equivalent)")
+            steps.append("   - Test with a known-good power source / PoE injector")
             steps.append("   - Check Ethernet cable: Cat5e/Cat6, max 100m length")
             steps.append("   - Measure PoE voltage at device: 48-57V DC expected")
             steps.append("   - Connect UART console for boot sequence analysis")
@@ -827,7 +820,7 @@ class TriageAssistant:
         elif 'capacitor' in symptom_lower or 'bulging' in symptom_lower or 'burst' in symptom_lower:
             steps.append("\n4. **DAA (Dead After Arrival) Protocol**")
             steps.append("   - Verify PoE+ power delivery (802.3at, 30W minimum)")
-            steps.append("   - Test with known-good PoE injector (Goldfinch or equivalent)")
+            steps.append("   - Test with a known-good power source / PoE injector")
             steps.append("   - Check Ethernet cable: Cat5e/Cat6, max 100m length")
             steps.append("   - Measure PoE voltage at device: 48-57V DC expected")
             steps.append("   - Connect UART console for boot sequence analysis")
@@ -917,7 +910,7 @@ class TriageAssistant:
             steps.append("   - Verify insertion force is within acceptable range")
             steps.append("   - Check for Luxshare fixture design issues")
             steps.append("   - Inspect connector alignment and integrity")
-            steps.append("   - Verify M22 gland installation procedure")
+            steps.append("   - Verify cable-gland installation procedure")
             steps.append("   - Test QR code functionality (check for broken links)")
             steps.append("   - Review installation manual for Canadian SKUs")
             steps.append("   - Validate eero app pairing process")
@@ -936,8 +929,8 @@ class TriageAssistant:
         elif 'liquid' in symptom_lower or 'water' in symptom_lower or 'ingress' in symptom_lower:
             steps.append("\n4. **Liquid Ingress Investigation**")
             steps.append("   - Verify unit orientation during installation")
-            steps.append("   - Check M22 gland seal: proper tightening torque")
-            steps.append("   - Inspect for IP66 seal compromise")
+            steps.append("   - Check cable-gland seal: proper tightening torque")
+            steps.append("   - Inspect for enclosure seal compromise")
             steps.append("   - Perform FTIR analysis on residue")
             steps.append("   - Review installation photos/documentation")
             steps.append("   - Test seal integrity with controlled liquid exposure")
@@ -949,7 +942,7 @@ class TriageAssistant:
             steps.append("   - **IMMEDIATE:** Isolate unit and power source")
             steps.append("   - File SAFETY ticket (e.g., SAFETY-125)")
             steps.append("   - Document thermal damage pattern and location")
-            steps.append("   - Test both Snowbird unit and PSU separately")
+            steps.append("   - Test the unit and its PSU separately")
             steps.append("   - Measure electrical parameters: voltage, current, resistance")
             steps.append("   - Inspect for asymmetric damage (indicates external source)")
             steps.append("   - Check outlet/power source: Neutral connection integrity")
@@ -1055,12 +1048,16 @@ def render_triage_ui(df):
     prog = get_selected_program() or "Snowbird"
     st.caption(f"Technical failure analysis for {prog}")
     
-    # Initialize assistant
-    if 'triage_assistant' not in st.session_state:
+    # Initialize assistant. The cache is keyed on the selected program AND the
+    # dataset so switching programs rebuilds it — otherwise a cached assistant
+    # would keep showing the previous program's specs and model.
+    _cache_key = f"{prog}:{len(df)}:{hash(tuple(df.columns))}"
+    if st.session_state.get('triage_assistant_key') != _cache_key:
         st.session_state.triage_assistant = TriageAssistant()
         st.session_state.triage_assistant.load_historical_data(df)
         st.session_state.triage_assistant.build_symptom_patterns()
         success, message = st.session_state.triage_assistant.train_model()
+        st.session_state.triage_assistant_key = _cache_key
         if success:
             st.success(f"✅ {message}")
         else:
@@ -1068,33 +1065,31 @@ def render_triage_ui(df):
     
     assistant = st.session_state.triage_assistant
     
-    # Technical specifications
+    # Technical specifications (from this program's board pack)
     with st.expander("📋 Product Technical Specifications", expanded=False):
         specs = assistant.technical_specs
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.write(f"**Product:** {specs['product']}")
-            st.write(f"**Type:** {specs['type']}")
-            st.write(f"**Rating:** {specs['rating']}")
-            st.write(f"**Temp Range:** {specs['temp_range']}")
-        with col2:
-            st.write(f"**WiFi:** {specs['wifi']}")
-            st.write(f"**Speed:** {specs['speed']}")
-            st.write(f"**Coverage:** {specs['coverage']}")
-            st.write(f"**Devices:** {specs['devices']}")
-        with col3:
-            st.write(f"**Power:** {specs['power']}")
-            st.write(f"**Ethernet:** {specs['ethernet']}")
-            st.write(f"**Storage:** {specs['storage']}")
-            st.write(f"**Security:** {specs['security']}")
-    
+        if not specs:
+            st.info(f"No product specifications have been added for {prog} yet. "
+                    f"Add a `product` section to its board pack "
+                    f"(`python board_pack.py init {prog}`) to populate this.")
+        else:
+            # Render whatever fields the pack defines, in 3 columns.
+            items = [(k, v) for k, v in specs.items() if not isinstance(v, (list, dict))]
+            cols = st.columns(3)
+            for i, (k, v) in enumerate(items):
+                cols[i % 3].write(f"**{k.replace('_', ' ').title()}:** {v}")
+
     # LED Status Reference
     with st.expander("💡 LED Status Code Reference", expanded=False):
-        led_df = pd.DataFrame([
-            {'Status': k.replace('_', ' ').title(), 'Meaning': v} 
-            for k, v in assistant.led_codes.items()
-        ])
-        st.dataframe(led_df, use_container_width=True, hide_index=True)
+        if not assistant.led_codes:
+            st.info(f"No LED status codes defined for {prog} yet "
+                    "(add `led_codes` to its board pack).")
+        else:
+            led_df = pd.DataFrame([
+                {'Status': k.replace('_', ' ').title(), 'Meaning': v}
+                for k, v in assistant.led_codes.items()
+            ])
+            st.dataframe(led_df, use_container_width=True, hide_index=True)
     
     # Failure Modes Analysis
     with st.expander("Failure Modes Analysis", expanded=False):
@@ -1312,12 +1307,16 @@ def render_triage_ui(df):
             help="Select a predefined category or leave blank"
         )
         
-        unit_sn = st.text_input("Unit Serial Number (optional)", placeholder="GGC3530B44031206")
-        
+        _specs = assistant.technical_specs or {}
+        unit_sn = st.text_input(
+            "Unit Serial Number (optional)",
+            placeholder=str(_specs.get("serial_format", "") or "Unit serial"))
+
+        _adapters = _specs.get("power_adapters") or []
         power_adapter = st.selectbox(
             "Power Adapter Type",
-            options=['', 'Goldfinch', 'PoE switch', 'PoE injector', 'Other'],
-            help="Select the power source being used"
+            options=[''] + list(_adapters) + (['Other'] if _adapters else []),
+            help="Select the power source being used (options come from this program's board pack)"
         )
     
     # Analyze button
