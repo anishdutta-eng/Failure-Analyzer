@@ -12,6 +12,7 @@ from triage_assistant import render_triage_ui
 from debugger import render_debugger_ui
 from debug_analytics import render_analytics_ui
 from data_explorer import render_data_explorer
+from schematic_viewer import render_schematic_viewer
 import convert_jupiter_csv as convert_jupiter
 from program_config import (
     get_program_list, register_program, get_selected_program,
@@ -422,9 +423,10 @@ def main():
         view_mode = st.radio(
             "Select View",
             options=["📊 Dashboard", "🔧 Triage Assistant", "PCB Debugger", "📈 Debug Analytics",
-                     "📋 Failure Analysis Table", "🔭 Data Explorer"],
+                     "📋 Failure Analysis Table", "🔭 Data Explorer", "📐 Schematic Viewer"],
             help="Switch between analysis dashboard, triage tool, PCB debugger, statistical analytics, "
-                 "the detailed failure table, and a schema-agnostic CSV data explorer"
+                 "the detailed failure table, a schema-agnostic CSV data explorer, and the "
+                 "schematic viewer (needs no CSV)"
         )
         
         if view_mode == "📊 Dashboard":
@@ -455,6 +457,12 @@ def main():
             unsafe_allow_html=True,
         )
         
+    # The Schematic Viewer works on the program's own design documents, so it
+    # does not need (and must not wait for) a field-return CSV upload.
+    if view_mode == "📐 Schematic Viewer":
+        render_schematic_viewer()
+        return
+
     # Main content
     if uploaded_file is not None:
         # The Data Explorer is schema-agnostic — always explore the raw upload.

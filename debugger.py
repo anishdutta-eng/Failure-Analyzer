@@ -831,6 +831,18 @@ def _render_daa_deduction(ded, resistances):
         if h.get("schematic_path"):
             st.markdown(f"**Signal path:** `{h['schematic_path']}`")
 
+        # Cross-probe hint: point at the schematic sheet holding this rail.
+        _tp_label = str(h["rail"].split(" — ")[0]).strip()
+        try:
+            import schematic_index as _si
+            _sheets = _si.search_index(get_selected_program(), _tp_label)
+            if _sheets:
+                _where = ", ".join(f"{s['filename']} sheet {s['page']}" for s in _sheets[:3])
+                st.markdown(f"**📐 On the schematic:** {_where} — open the "
+                            f"**Schematic Viewer** and search `{_tp_label}` to zoom in.")
+        except Exception:
+            pass
+
         st.markdown("##### Ranked failure mechanisms (knowledge base)")
         for rank, mech in enumerate(h.get("mechanisms", [])):
             _render_daa_mechanism(mech, rank)

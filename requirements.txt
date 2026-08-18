@@ -9,3 +9,8 @@ Pillow==10.2.0
 numpy==1.26.3
 scikit-learn==1.4.0
 scipy>=1.12.0
+# Schematic Viewer: PDF rendering, text extraction and coordinate search.
+# NOTE: PyMuPDF is AGPL-3.0 (or commercial). Fine for internal, non-distributed
+# use; check your OSS/legal process before shipping externally. The app degrades
+# gracefully without it (images/SVG still work).
+pymupdf==1.28.0

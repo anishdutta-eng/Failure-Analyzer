@@ -27,3 +27,18 @@ Thumbs.db
 *.pem
 *.key
 credentials*.json
+
+# Generated schematic index cache (rebuilt from the documents)
+programs/*/board/schematic_index.json
+
+# Schematic source documents are confidential design data. Ignored by default so
+# an accidental `git add .` cannot publish them. Board *packs* (board_pack.json)
+# ARE tracked, since they hold the modelled test points, not the raw drawings.
+# If your repo is private and you deliberately want schematics versioned, remove
+# these lines or force-add a specific file with `git add -f <path>`.
+programs/*/board/schematics/*.pdf
+programs/*/board/schematics/*.png
+programs/*/board/schematics/*.jpg
+programs/*/board/schematics/*.jpeg
+programs/*/board/schematics/*.webp
+programs/*/board/schematics/*.svg
