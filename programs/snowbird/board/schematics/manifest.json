@@ -1,0 +1,110 @@
+{
+  "program": "Snowbird",
+  "documents": {
+    "01_System_Block_Diagram.png": {
+      "title": "System Block Diagram",
+      "category": "Overview",
+      "original_filename": "snowbird_block_diagram.png"
+    },
+    "02_Power_Sequence.png": {
+      "title": "Power-Up Sequence",
+      "category": "Overview",
+      "original_filename": "Snowbird_Power_Sequence.png"
+    },
+    "03_Miami_Boot_Sequence.png": {
+      "title": "Miami SoC Boot Sequence",
+      "category": "Overview",
+      "original_filename": "Snwowbird_Miami_boot_Sequence.png"
+    },
+    "10_PoE_RJ45_Input.png": {
+      "title": "PoE / RJ45 Input Stage",
+      "category": "Power",
+      "original_filename": "Snowbird_RJ45.png"
+    },
+    "11_Ethernet_Power.png": {
+      "title": "Ethernet PHY Power",
+      "category": "Power",
+      "original_filename": "Snowbird_Ethernet_power_Schematic.png"
+    },
+    "20_DDR4_SDRAM.png": {
+      "title": "DDR4 SDRAM",
+      "category": "Memory",
+      "original_filename": "Snowbird_DDR_DDR4_SDRAM.png"
+    },
+    "21_eMMC_Clock.png": {
+      "title": "eMMC and Clocking",
+      "category": "Memory",
+      "original_filename": "Snowbird_eMMC_clk.png"
+    },
+    "30_RF_Schematic.png": {
+      "title": "RF Section",
+      "category": "RF",
+      "original_filename": "Snowbird_RF_schematic.png"
+    },
+    "31_RF_FEMs.png": {
+      "title": "RF Front-End Modules (FEMs)",
+      "category": "RF",
+      "original_filename": "Snowbird_FEMs.png"
+    },
+    "40_USB_PCIe.png": {
+      "title": "USB and PCIe",
+      "category": "Interfaces",
+      "original_filename": "Snowbird_USB_PCIes_schematic.png"
+    },
+    "41_USB_Sheet15.png": {
+      "title": "USB (sheet 15)",
+      "category": "Interfaces",
+      "original_filename": "snowbird_schematics_pg15_USB.png"
+    },
+    "50_LEDs.png": {
+      "title": "LED Indicators",
+      "category": "Interfaces",
+      "original_filename": "snwobird_LEDs.png"
+    },
+    "51_Board_IO.png": {
+      "title": "Board I/O and Misc",
+      "category": "Interfaces",
+      "original_filename": "Snowbird_board I:O and other schematics.png"
+    },
+    "60_Test_Points.png": {
+      "title": "Test Points (schematic)",
+      "category": "Test Points",
+      "original_filename": "Snowbird test points.png"
+    },
+    "61_PCB_Test_Point_Locations.png": {
+      "title": "PCB Test-Point Locations (physical)",
+      "category": "Test Points",
+      "original_filename": "Snowbird_PCB_testpoint. .png"
+    },
+    "62_Test_Point_Spec_Values.png": {
+      "title": "Test-Point KGU Spec Values (LSL/Nominal/USL)",
+      "category": "Test Points",
+      "original_filename": "Snowbird_testpoint_Value.png"
+    },
+    "70_Sheet_12.png": {
+      "title": "Schematic sheet 12",
+      "category": "Sheets",
+      "original_filename": "snowbird_Schematics_page12.png"
+    },
+    "71_Sheet_14.png": {
+      "title": "Schematic sheet 14",
+      "category": "Sheets",
+      "original_filename": "snowbird_page14_Schematics.png"
+    },
+    "72_Sheet_18.png": {
+      "title": "Schematic sheet 18",
+      "category": "Sheets",
+      "original_filename": "Snowbird_pg18.png"
+    },
+    "73_Sheet_19.png": {
+      "title": "Schematic sheet 19",
+      "category": "Sheets",
+      "original_filename": "Snowbird_pg19.png"
+    },
+    "74_Sheet_20.png": {
+      "title": "Schematic sheet 20",
+      "category": "Sheets",
+      "original_filename": "Snowbird_pg20.png"
+    }
+  }
+}

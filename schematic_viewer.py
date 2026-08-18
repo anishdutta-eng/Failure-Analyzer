@@ -102,9 +102,13 @@ def _render_summary(program: str, index: dict):
     c4.metric("Nets", s["n_nets"])
     c5.metric("Searchable", f"{s['searchable_docs']}/{s['n_documents']}")
     if s["scanned_docs"]:
-        st.warning(f"{s['scanned_docs']} document(s) have no text layer (scanned or "
-                   "flattened). They display fine, but can't be searched or cross-probed. "
-                   "Re-export as a vector PDF to unlock those features.")
+        st.warning(f"{s['scanned_docs']} document(s) have no searchable text. "
+                   "They display fine but can't be searched or cross-probed.")
+    n_ocr = sum(1 for d in index.get("documents", []) if d.get("ocr") and d.get("has_text_layer"))
+    if n_ocr:
+        st.caption(f"🔤 {n_ocr} image-based sheet(s) were made searchable with OCR. "
+                   "OCR is very good on schematics but not perfect — if a designator "
+                   "isn't found, try a partial search (e.g. `579` instead of `TP579`).")
     return s
 
 
@@ -155,14 +159,32 @@ def _crossprobe_card(token: str, xp: dict, readings: dict):
 
 def _tab_browse(program: str, index: dict):
     docs = index.get("documents", [])
-    names = [d["filename"] for d in docs]
-    fn = st.selectbox("Document", names, key="schem_browse_doc")
+
+    # Group by category (from manifest) so the list reads logically.
+    cats = []
+    for d in docs:
+        c = d.get("category") or "Uncategorized"
+        if c not in cats:
+            cats.append(c)
+    cat = st.selectbox("Category", ["All"] + cats, key="schem_browse_cat")
+    pool = [d for d in docs if cat == "All" or (d.get("category") or "Uncategorized") == cat]
+    if not pool:
+        st.info("No documents in this category.")
+        return
+
+    def _label(d):
+        return f"{d.get('title') or d['filename']}"
+
+    fn = st.selectbox("Document", [d["filename"] for d in pool],
+                      format_func=lambda f: _label(next(x for x in pool if x["filename"] == f)),
+                      key="schem_browse_doc")
     doc = next(d for d in docs if d["filename"] == fn)
     path = os.path.join(si.schematics_dir(program), fn)
 
-    st.caption(f"{doc['kind'].upper()} · {doc['size_human']} · "
-               f"{doc.get('page_count', 1)} sheet(s) · "
-               + ("searchable text layer ✅" if doc.get("has_text_layer") else "no text layer ⚠️"))
+    layer = ("searchable text layer ✅" if doc.get("has_text_layer") and not doc.get("ocr")
+             else ("searchable via OCR ✅" if doc.get("has_text_layer") else "not searchable ⚠️"))
+    st.caption(f"**{doc.get('title') or fn}** · {doc['kind'].upper()} · {doc['size_human']} · "
+               f"{doc.get('page_count', 1)} sheet(s) · {layer}  \n`{fn}`")
 
     if doc["kind"] == "image":
         st.image(path, use_container_width=True)
@@ -273,7 +295,34 @@ def _tab_search(program: str, index: dict, xp: dict, readings: dict):
     path = os.path.join(si.schematics_dir(program), hit["filename"])
 
     if hit["kind"] != "pdf":
-        st.image(path, use_container_width=True)
+        # Raster schematic: use the OCR boxes to crop-zoom on the match.
+        boxes = si.locate_in_image(program, hit["filename"], term, index)
+        if boxes:
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                occ = st.selectbox("Occurrence", range(len(boxes)),
+                                   format_func=lambda i: f"#{i+1} at {boxes[i]['box'][:2]}",
+                                   key="schem_img_occ")
+            with c2:
+                pad = st.select_slider("Context around it (px)",
+                                       options=[120, 260, 450, 700, 1100], value=260,
+                                       key="schem_img_pad")
+            with c3:
+                scale = st.select_slider("Upscale", options=[1.0, 1.5, 2.0, 3.0], value=2.0,
+                                         key="schem_img_scale")
+            crop = si.render_image_crop(path, boxes[occ]["box"], pad=int(pad), scale=float(scale))
+            if crop:
+                st.image(crop, use_container_width=True,
+                         caption=f"{term.upper()} — {hit['filename']} (OCR-located)")
+                st.download_button("📥 Download this crop (for the FA report)", data=crop,
+                                   file_name=f"{term.upper()}_{hit['filename']}",
+                                   mime="image/png")
+            with st.expander("Show the full sheet", expanded=False):
+                st.image(path, use_container_width=True)
+        else:
+            st.info("Matched via the OCR token list, but no reliable coordinates for this "
+                    "term (low OCR confidence). Showing the full sheet.")
+            st.image(path, use_container_width=True)
         return
 
     coords = si.locate_in_pdf(path, term, page=hit["page"])

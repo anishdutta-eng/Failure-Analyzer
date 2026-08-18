@@ -52,7 +52,20 @@ VECTOR_EXTS = {".svg"}
 SUPPORTED_EXTS = PDF_EXTS | IMAGE_EXTS | VECTOR_EXTS
 
 INDEX_FILENAME = "schematic_index.json"
-INDEX_VERSION = 1
+MANIFEST_FILENAME = "manifest.json"
+INDEX_VERSION = 2  # bumped: image OCR + manifest titles
+
+# OCR is optional. When Tesseract + pytesseract are present, image-based
+# schematics (PNG/JPG screenshots, scanned sheets) become searchable too.
+try:  # pragma: no cover - import shim
+    import pytesseract as _pytesseract
+    from PIL import Image as _PILImage
+    _pytesseract.get_tesseract_version()
+    OCR_AVAILABLE = True
+except Exception:  # pragma: no cover
+    _pytesseract = None
+    _PILImage = None
+    OCR_AVAILABLE = False
 
 # Reference designators: letter prefix + number (C448, TP579, U12, FB3, R737).
 # Ordered longest-prefix-first so TP matches before T.
@@ -177,6 +190,55 @@ def index_pdf(path: str, max_pages: int | None = None) -> dict:
     return {"sheets": sheets, "has_text_layer": any_text, "page_count": len(sheets)}
 
 
+def load_manifest(program: str) -> dict:
+    """Optional human titles/categories for each document, written by whoever
+    organized the folder: {filename: {title, category, ...}}."""
+    p = os.path.join(schematics_dir(program), MANIFEST_FILENAME)
+    if not os.path.isfile(p):
+        return {}
+    try:
+        with open(p, encoding="utf-8") as f:
+            return (json.load(f) or {}).get("documents", {}) or {}
+    except Exception:
+        return {}
+
+
+def ocr_image(path: str) -> dict:
+    """OCR an image-based schematic to recover designators/nets with
+    coordinates. Returns {'text', 'designators', 'nets', 'boxes'} where boxes
+    maps TOKEN -> [[x0,y0,x1,y1], ...] in pixel coordinates."""
+    if not OCR_AVAILABLE:
+        return {"text": "", "designators": [], "nets": [], "boxes": {},
+                "error": "OCR unavailable (needs tesseract + pytesseract)."}
+    try:
+        with _PILImage.open(path) as im:
+            im = im.convert("L")  # grayscale helps on schematic line art
+            data = _pytesseract.image_to_data(im, output_type=_pytesseract.Output.DICT)
+    except Exception as e:
+        return {"text": "", "designators": [], "nets": [], "boxes": {}, "error": str(e)}
+
+    words, boxes = [], {}
+    n = len(data.get("text", []))
+    for i in range(n):
+        w = (data["text"][i] or "").strip()
+        if not w:
+            continue
+        words.append(w)
+        try:
+            conf = float(data.get("conf", ["-1"] * n)[i])
+        except (TypeError, ValueError):
+            conf = -1.0
+        if conf < 40:  # ignore low-confidence noise for coordinate mapping
+            continue
+        x, y = int(data["left"][i]), int(data["top"][i])
+        bw, bh = int(data["width"][i]), int(data["height"][i])
+        for tok, _n in ((m.group(0).upper(), None) for m in _DESIGNATOR_RE.finditer(w.upper())):
+            boxes.setdefault(tok, []).append([x, y, x + bw, y + bh])
+    text = " ".join(words)
+    designators, nets = extract_tokens(text.upper())
+    return {"text": text, "designators": designators, "nets": nets, "boxes": boxes}
+
+
 def _guess_sheet_title(text: str) -> str:
     """Best-effort sheet title: first meaningful line of the page text."""
     for line in (text or "").splitlines():
@@ -189,13 +251,15 @@ def _guess_sheet_title(text: str) -> str:
     return ""
 
 
-def build_index(program: str, force: bool = False) -> dict:
+def build_index(program: str, force: bool = False, ocr: bool = True) -> dict:
     """Build (or load from cache) the schematic index for a program.
 
     The cache is invalidated per-file on size/mtime change, so replacing a
-    schematic re-indexes just that document.
+    schematic re-indexes just that document. `ocr` controls whether raster
+    images are OCR'd (slow on first run, then cached).
     """
     docs = list_documents(program)
+    manifest = load_manifest(program)
     cache = {}
     ipath = index_path(program)
     if not force and os.path.isfile(ipath):
@@ -217,22 +281,40 @@ def build_index(program: str, force: bool = False) -> dict:
             continue
 
         entry = {k: d[k] for k in ("filename", "ext", "kind", "size_bytes", "mtime", "size_human")}
+        title = (manifest.get(d["filename"], {}) or {}).get("title") or ""
+        category = (manifest.get(d["filename"], {}) or {}).get("category") or ""
+        entry["title"] = title
+        entry["category"] = category
+
         if d["kind"] == "pdf":
             entry.update(index_pdf(d["path"]))
-        else:
-            # Images/SVG carry no extractable text layer.
-            entry.update({"sheets": [{"page": 1, "title": d["filename"], "designators": [],
-                                      "nets": [], "char_count": 0}],
+        elif d["kind"] == "svg":
+            entry.update({"sheets": [{"page": 1, "title": title or d["filename"],
+                                      "designators": [], "nets": [], "char_count": 0}],
                           "has_text_layer": False, "page_count": 1})
-            if d["kind"] == "svg":
-                try:
-                    with open(d["path"], encoding="utf-8", errors="ignore") as f:
-                        svg_text = f.read()
-                    desig, nets = extract_tokens(svg_text)
-                    entry["sheets"][0].update({"designators": desig, "nets": nets})
-                    entry["has_text_layer"] = bool(desig or nets)
-                except Exception:
-                    pass
+            try:
+                with open(d["path"], encoding="utf-8", errors="ignore") as f:
+                    svg_text = f.read()
+                desig, nets = extract_tokens(svg_text)
+                entry["sheets"][0].update({"designators": desig, "nets": nets})
+                entry["has_text_layer"] = bool(desig or nets)
+            except Exception:
+                pass
+        else:
+            # Raster image: OCR recovers a searchable token layer.
+            res = ocr_image(d["path"]) if ocr else {"designators": [], "nets": [],
+                                                    "boxes": {}, "text": ""}
+            entry.update({
+                "sheets": [{"page": 1, "title": title or d["filename"],
+                            "designators": res.get("designators", []),
+                            "nets": res.get("nets", []),
+                            "char_count": len(res.get("text", "")),
+                            "ocr_boxes": res.get("boxes", {})}],
+                "has_text_layer": bool(res.get("designators") or res.get("nets")),
+                "ocr": True,
+                "ocr_error": res.get("error"),
+                "page_count": 1,
+            })
         documents.append(entry)
 
     index = {
@@ -409,6 +491,42 @@ def render_page_highlighted(path: str, page: int, term: str, dpi: int = 150) -> 
 # --------------------------------------------------------------------------- #
 # Cross-probing helpers (schematic <-> board pack)
 # --------------------------------------------------------------------------- #
+def render_image_crop(path: str, box, pad: int = 260, scale: float = 2.0) -> bytes | None:
+    """Crop a raster schematic around an OCR box (pixel coords) and upscale it,
+    giving the same 'deep dive' behaviour as the PDF crop path."""
+    if _PILImage is None:
+        return None
+    try:
+        import io as _io
+        with _PILImage.open(path) as im:
+            x0, y0, x1, y1 = box
+            left = max(0, int(x0) - pad)
+            top = max(0, int(y0) - pad)
+            right = min(im.width, int(x1) + pad)
+            bottom = min(im.height, int(y1) + pad)
+            crop = im.crop((left, top, right, bottom))
+            if scale and scale != 1.0:
+                crop = crop.resize((int(crop.width * scale), int(crop.height * scale)),
+                                   _PILImage.LANCZOS)
+            buf = _io.BytesIO()
+            crop.convert("RGB").save(buf, format="PNG")
+            return buf.getvalue()
+    except Exception:
+        return None
+
+
+def locate_in_image(program: str, filename: str, term: str, index: dict | None = None) -> list:
+    """Return OCR boxes for `term` on a raster schematic: [{'box': [...]}, ...]."""
+    index = index or build_index(program)
+    for d in index.get("documents", []):
+        if d["filename"] != filename:
+            continue
+        for s in d.get("sheets", []):
+            boxes = (s.get("ocr_boxes") or {}).get((term or "").upper()) or []
+            return [{"page": s.get("page", 1), "box": b} for b in boxes]
+    return []
+
+
 def crossprobe_targets(program: str, test_points: dict, schematic_db: dict) -> dict:
     """Map searchable tokens -> board-pack context.
 
