@@ -53,7 +53,7 @@ SUPPORTED_EXTS = PDF_EXTS | IMAGE_EXTS | VECTOR_EXTS
 
 INDEX_FILENAME = "schematic_index.json"
 MANIFEST_FILENAME = "manifest.json"
-INDEX_VERSION = 2  # bumped: image OCR + manifest titles
+INDEX_VERSION = 4  # bumped: net-name boxes as anchors
 
 # OCR is optional. When Tesseract + pytesseract are present, image-based
 # schematics (PNG/JPG screenshots, scanned sheets) become searchable too.
@@ -203,20 +203,61 @@ def load_manifest(program: str) -> dict:
         return {}
 
 
-def ocr_image(path: str) -> dict:
+# OCR tuning for schematics. Default tesseract (PSM 3) assumes prose layout and
+# finds almost nothing on schematic line art; PSM 11 ("sparse text") plus a 2x
+# upscale is dramatically better on real sheets (measured: 0 -> ~20 component
+# designators per sheet on Snowbird's power schematics).
+OCR_PSM = 11
+OCR_UPSCALE = 2.0
+OCR_MIN_CONF = 35.0
+
+# Reference-designator prefixes that actually appear on a PCB. Anything else is
+# almost certainly an OCR misread of a net label or annotation.
+_VALID_PREFIXES = {
+    "C", "R", "L", "D", "U", "Q", "J", "T", "Y", "X", "F", "K",
+    "FB", "TP", "SW", "LED", "RN", "CN", "JP", "BT", "DZ", "XW",
+}
+
+
+def _plausible_designator(token: str) -> bool:
+    """Filter OCR noise. Real designators are <prefix><1-4 digits> and don't
+    carry leading zeros (C08, L00, F02 are misreads, not parts)."""
+    m = re.fullmatch(r"([A-Z]+)(\d{1,5})([A-Z])?", token.upper())
+    if not m:
+        return False
+    prefix, num = m.group(1), m.group(2)
+    if prefix not in _VALID_PREFIXES:
+        return False
+    if len(num) > 4:
+        return False
+    if len(num) > 1 and num.startswith("0"):
+        return False
+    return True
+
+
+def ocr_image(path: str, psm: int = OCR_PSM, upscale: float = OCR_UPSCALE) -> dict:
     """OCR an image-based schematic to recover designators/nets with
     coordinates. Returns {'text', 'designators', 'nets', 'boxes'} where boxes
-    maps TOKEN -> [[x0,y0,x1,y1], ...] in pixel coordinates."""
+    maps TOKEN -> [[x0,y0,x1,y1], ...] in ORIGINAL image pixel coordinates.
+
+    Note: we upscale before OCR for accuracy, then divide coordinates back down
+    so callers can crop against the original file.
+    """
     if not OCR_AVAILABLE:
         return {"text": "", "designators": [], "nets": [], "boxes": {},
                 "error": "OCR unavailable (needs tesseract + pytesseract)."}
     try:
-        with _PILImage.open(path) as im:
-            im = im.convert("L")  # grayscale helps on schematic line art
-            data = _pytesseract.image_to_data(im, output_type=_pytesseract.Output.DICT)
+        with _PILImage.open(path) as im0:
+            im = im0.convert("L")  # grayscale helps on line art
+            if upscale and upscale != 1.0:
+                im = im.resize((int(im.width * upscale), int(im.height * upscale)),
+                               _PILImage.LANCZOS)
+            data = _pytesseract.image_to_data(
+                im, config=f"--psm {psm}", output_type=_pytesseract.Output.DICT)
     except Exception as e:
         return {"text": "", "designators": [], "nets": [], "boxes": {}, "error": str(e)}
 
+    inv = 1.0 / float(upscale or 1.0)
     words, boxes = [], {}
     n = len(data.get("text", []))
     for i in range(n):
@@ -228,14 +269,26 @@ def ocr_image(path: str) -> dict:
             conf = float(data.get("conf", ["-1"] * n)[i])
         except (TypeError, ValueError):
             conf = -1.0
-        if conf < 40:  # ignore low-confidence noise for coordinate mapping
+        if conf < OCR_MIN_CONF:
             continue
         x, y = int(data["left"][i]), int(data["top"][i])
         bw, bh = int(data["width"][i]), int(data["height"][i])
-        for tok, _n in ((m.group(0).upper(), None) for m in _DESIGNATOR_RE.finditer(w.upper())):
-            boxes.setdefault(tok, []).append([x, y, x + bw, y + bh])
+        obox = [round(x * inv), round(y * inv),
+                round((x + bw) * inv), round((y + bh) * inv)]
+        for m in _DESIGNATOR_RE.finditer(w.upper()):
+            tok = m.group(0).upper()
+            if not _plausible_designator(tok):
+                continue
+            # Map back to original-image coordinates
+            boxes.setdefault(tok, []).append(obox)
+        # Net/signal names are also anchors: on real circuit sheets the rail
+        # label (VDD_CX, POE_5V) sits right in the sub-circuit that generates
+        # it, whereas the TPxxx label often only exists on summary sheets.
+        for m in _NET_RE.finditer(w.upper()):
+            boxes.setdefault(m.group(1).upper(), []).append(obox)
     text = " ".join(words)
     designators, nets = extract_tokens(text.upper())
+    designators = [d for d in designators if _plausible_designator(d)]
     return {"text": text, "designators": designators, "nets": nets, "boxes": boxes}
 
 
