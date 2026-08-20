@@ -24,7 +24,6 @@ locating a label to zoom to). It never becomes a diagnosis.
 
 from __future__ import annotations
 
-import io
 import json
 import os
 import re
@@ -32,26 +31,9 @@ import re
 import daa_knowledge_base as kb
 import schematic_index as si
 
-try:
-    from PIL import Image, ImageDraw
-except Exception:  # pragma: no cover
-    Image = ImageDraw = None
-
 SRC_AUTHORITATIVE = "authoritative"   # from the board pack / schematic
 SRC_MEASURED = "measured"             # from this session's readings
 SRC_REFERENCE = "reference"           # from the FA knowledge base
-
-# Highlight roles for schematic annotation (authoritative nets only)
-COLOR_PRIMARY = (220, 38, 99)
-COLOR_UPSTREAM = (124, 58, 237)
-COLOR_DOWNSTREAM = (37, 99, 235)
-COLOR_RELATED = (5, 150, 105)
-ROLE_COLORS = {
-    "primary": COLOR_PRIMARY,
-    "upstream": COLOR_UPSTREAM,
-    "downstream": COLOR_DOWNSTREAM,
-    "related": COLOR_RELATED,
-}
 
 
 # --------------------------------------------------------------------------- #
@@ -325,74 +307,54 @@ def designators_near(program: str, sheet_filename: str, box, radius_px: int = 70
 # --------------------------------------------------------------------------- #
 # Schematic rendering
 # --------------------------------------------------------------------------- #
-def render_net_view(program: str, sheet: dict, scope: dict, zoom: float = 1.0,
-                    pad: int = 700, index: dict | None = None,
-                    mark_related: bool = True) -> bytes | None:
-    """Render the sheet region around the rail, marking only AUTHORITATIVE items:
-    the rail's own label(s) plus topological neighbours from the power tree."""
-    if Image is None:
-        return None
-    path = os.path.join(si.schematics_dir(program), sheet["filename"])
+def sheet_markers(program: str, sheet: dict, scope: dict,
+                  index: dict | None = None) -> list:
+    """Marker boxes to overlay on a sheet, in ORIGINAL image pixel coordinates.
+
+    Only AUTHORITATIVE items are marked: the rail's own label, plus the power-tree
+    neighbours (source / loads) and related test points named by the pack. No
+    inferred component associations.
+    """
     index = index or si.build_index(program)
+    boxes_on_sheet = {}
+    for d in index.get("documents", []):
+        if d["filename"] != sheet.get("filename"):
+            continue
+        for s in d.get("sheets", []):
+            boxes_on_sheet = s.get("ocr_boxes") or {}
 
-    # Which tokens may we legitimately mark?
-    roles = {}
-    for b in sheet.get("all_boxes", [sheet["box"]]):
-        roles.setdefault("primary", []).append(b)
-    if mark_related:
-        boxes_on_sheet = {}
-        for d in index.get("documents", []):
-            if d["filename"] != sheet["filename"]:
+    markers = []
+    seen = set()
+
+    def _add(role, label, limit=2):
+        if not label:
+            return
+        lab = str(label).upper()
+        for b in (boxes_on_sheet.get(lab) or [])[:limit]:
+            k = (lab, tuple(b))
+            if k in seen:
                 continue
-            for s in d.get("sheets", []):
-                boxes_on_sheet = s.get("ocr_boxes") or {}
-        def _add(role, label):
-            if not label:
-                return
-            for b in (boxes_on_sheet.get(str(label).upper()) or [])[:2]:
-                roles.setdefault(role, []).append(b)
-        up = scope.get("upstream") or {}
-        _add("upstream", up.get("tp"))
-        _add("upstream", net_name_for(up.get("key", ""), None))
-        for dn in scope.get("downstream", []):
-            _add("downstream", dn.get("tp"))
-        for rt in scope.get("related_tps", []):
-            m = re.search(r"\bTP\d+\b", str(rt), re.I)
-            if m:
-                _add("related", m.group(0))
+            seen.add(k)
+            markers.append({"box": b, "role": role, "label": lab})
 
-    try:
-        with Image.open(path) as im:
-            im = im.convert("RGB")
-            draw = ImageDraw.Draw(im)
-            for role, boxes in roles.items():
-                color = ROLE_COLORS.get(role, COLOR_PRIMARY)
-                width = 6 if role == "primary" else 3
-                for b in boxes:
-                    draw.rectangle([b[0] - 10, b[1] - 10, b[2] + 10, b[3] + 10],
-                                   outline=color, width=width)
+    # The rail itself — use whichever anchor actually matched this sheet
+    _add("primary", sheet.get("anchor"), limit=4)
+    if scope.get("net") and str(scope["net"]).upper() != str(sheet.get("anchor", "")).upper():
+        _add("primary", scope["net"], limit=4)
+    if scope.get("tp") and str(scope["tp"]).upper() != str(sheet.get("anchor", "")).upper():
+        _add("primary", scope["tp"], limit=4)
 
-            # Crop around the primary label
-            pb = roles["primary"][0]
-            eff_pad = int(pad / max(zoom, 0.05))
-            box = (max(0, pb[0] - eff_pad), max(0, pb[1] - int(eff_pad * 0.7)),
-                   min(im.width, pb[2] + eff_pad), min(im.height, pb[3] + int(eff_pad * 0.7)))
-            im = im.crop(box)
-
-            # Scale for legibility, capped to keep payload reasonable
-            target = 1700
-            if im.width < target:
-                r = target / float(im.width)
-                im = im.resize((int(im.width * r), int(im.height * r)), Image.LANCZOS)
-            if max(im.size) > 2600:
-                r = 2600 / float(max(im.size))
-                im = im.resize((int(im.width * r), int(im.height * r)), Image.LANCZOS)
-
-            buf = io.BytesIO()
-            im.save(buf, format="PNG")
-            return buf.getvalue()
-    except Exception:
-        return None
+    up = scope.get("upstream") or {}
+    _add("upstream", up.get("tp"))
+    _add("upstream", net_name_for(up.get("key", "") or "", None))
+    for dn in scope.get("downstream", []):
+        _add("downstream", dn.get("tp"), limit=1)
+        _add("downstream", net_name_for(dn.get("key", "") or "", None), limit=1)
+    for rt in scope.get("related_tps", []):
+        m = re.search(r"\bTP\d+\b", str(rt), re.I)
+        if m:
+            _add("related", m.group(0), limit=1)
+    return markers
 
 
 # --------------------------------------------------------------------------- #

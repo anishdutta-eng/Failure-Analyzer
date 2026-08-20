@@ -19,6 +19,7 @@ import pandas as pd
 import streamlit as st
 
 import board_pack
+import schematic_canvas
 import schematic_index as si
 import theme
 from program_config import get_selected_program
@@ -187,7 +188,10 @@ def _tab_browse(program: str, index: dict):
                f"{doc.get('page_count', 1)} sheet(s) · {layer}  \n`{fn}`")
 
     if doc["kind"] == "image":
-        st.image(path, use_container_width=True)
+        # Interactive: drag to pan, scroll to zoom — the whole sheet stays visible.
+        if not schematic_canvas.render_canvas(path, markers=[], height=720,
+                                             key=f"br_img_{fn}"):
+            st.image(path, use_container_width=True)
         return
     if doc["kind"] == "svg":
         try:
@@ -227,13 +231,23 @@ def _tab_browse(program: str, index: dict):
                         key="schem_browse_sheet")
     sheet = sheets[pick]
     dpi = st.select_slider("Render quality (DPI)", options=[100, 150, 200, 300, 400],
-                           value=150, key="schem_browse_dpi",
-                           help="Higher DPI = sharper zoom, slower render.")
+                           value=200, key="schem_browse_dpi",
+                           help="Higher DPI = sharper when you zoom in, slower to load.")
 
     with st.spinner("Rendering sheet…"):
         png = si.render_page(path, sheet["page"], dpi=dpi)
     if png:
-        st.image(png, use_container_width=True)
+        # Write to a temp file so the interactive canvas can inline it.
+        import tempfile
+        tmp = os.path.join(tempfile.gettempdir(),
+                           f"fa_{os.path.splitext(fn)[0]}_p{sheet['page']}_{dpi}.png")
+        try:
+            with open(tmp, "wb") as f:
+                f.write(png)
+            schematic_canvas.render_canvas(tmp, markers=[], height=720,
+                                          key=f"br_{fn}_{sheet['page']}")
+        except Exception:
+            st.image(png, use_container_width=True)
         st.download_button("📥 Download this sheet as PNG", data=png,
                            file_name=f"{os.path.splitext(fn)[0]}_sheet{sheet['page']}.png",
                            mime="image/png")
@@ -295,34 +309,28 @@ def _tab_search(program: str, index: dict, xp: dict, readings: dict):
     path = os.path.join(si.schematics_dir(program), hit["filename"])
 
     if hit["kind"] != "pdf":
-        # Raster schematic: use the OCR boxes to crop-zoom on the match.
+        # Raster schematic: show the WHOLE sheet interactively, with the match
+        # highlighted, and start zoomed to it. No machine-chosen crop.
         boxes = si.locate_in_image(program, hit["filename"], term, index)
-        if boxes:
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                occ = st.selectbox("Occurrence", range(len(boxes)),
-                                   format_func=lambda i: f"#{i+1} at {boxes[i]['box'][:2]}",
-                                   key="schem_img_occ")
-            with c2:
-                pad = st.select_slider("Context around it (px)",
-                                       options=[120, 260, 450, 700, 1100], value=260,
-                                       key="schem_img_pad")
-            with c3:
-                scale = st.select_slider("Upscale", options=[1.0, 1.5, 2.0, 3.0], value=2.0,
-                                         key="schem_img_scale")
-            crop = si.render_image_crop(path, boxes[occ]["box"], pad=int(pad), scale=float(scale))
-            if crop:
-                st.image(crop, use_container_width=True,
-                         caption=f"{term.upper()} — {hit['filename']} (OCR-located)")
-                st.download_button("📥 Download this crop (for the FA report)", data=crop,
-                                   file_name=f"{term.upper()}_{hit['filename']}",
-                                   mime="image/png")
-            with st.expander("Show the full sheet", expanded=False):
-                st.image(path, use_container_width=True)
+        markers = [{"box": b["box"], "role": "primary", "label": term.upper()}
+                   for b in boxes]
+        if markers:
+            st.caption(f"`{term.upper()}` highlighted in {len(markers)} place(s). "
+                       "Drag to pan, scroll to zoom, or press **Jump to net**.")
+            st.markdown(schematic_canvas.legend_html(("primary",)), unsafe_allow_html=True)
         else:
-            st.info("Matched via the OCR token list, but no reliable coordinates for this "
-                    "term (low OCR confidence). Showing the full sheet.")
+            st.info("Matched in the OCR token list, but without reliable coordinates "
+                    "(low confidence). Showing the full sheet to read manually.")
+        if not schematic_canvas.render_canvas(path, markers=markers, height=760,
+                                             initial="marker" if markers else "fit",
+                                             key=f"sr_{hit['filename']}_{term}"):
             st.image(path, use_container_width=True)
+        try:
+            with open(path, "rb") as f:
+                st.download_button("📥 Download full sheet", data=f.read(), mime="image/png",
+                                   file_name=hit["filename"], key=f"srdl_{hit['filename']}")
+        except Exception:
+            pass
         return
 
     coords = si.locate_in_pdf(path, term, page=hit["page"])

@@ -27,10 +27,11 @@ import daa_fa_engine as daa
 import daa_knowledge_base as daa_kb
 import debugger
 import fault_scope as fs
+import schematic_canvas
 import schematic_index as si
 import theme
 from program_config import get_selected_program
-from theme import BORDER, GREEN, MAGENTA, PURPLE, TEXT, TEXT_MUTED
+from theme import TEXT_MUTED
 
 STATUS_ICON = {"pass": "✅", "warn": "⚠️", "fail": "❌", "monitor": "🟠", "skip": "⬜"}
 
@@ -128,82 +129,82 @@ def _measure_pane(program: str, tps: dict, phases: dict, readings: dict):
 # --------------------------------------------------------------------------- #
 # Right pane — schematic
 # --------------------------------------------------------------------------- #
-def _schematic_pane(program: str, analysis: dict, index: dict, deep: bool = False):
+def _schematic_pane(program: str, analysis: dict, index: dict, deep: bool = False,
+                    height: int = 620):
+    """Right pane: the full sheet, interactive. Pan/zoom happens in the browser."""
     scope = analysis["scope"]
     sheets = analysis["sheets"]
+    all_docs = si.list_documents(program)
 
     st.markdown("##### 2 · Schematic")
 
-    if not sheets:
-        st.info(f"No sheet on file shows **{scope.get('net') or scope.get('tp')}**.")
-        st.caption("The circuit sheet for this rail hasn't been uploaded, or its label "
-                   "wasn't machine-readable. Add it under the program's "
-                   "`board/schematics/` folder to enable this pane.")
+    if not all_docs:
+        st.info("No schematic documents uploaded for this program yet.")
+        st.caption(f"Add sheets to `{si.schematics_dir(program)}` or use the uploader in the "
+                   "**📐 Schematic Viewer** view.")
         return
 
-    circuit_sheets = [s for s in sheets if s["is_circuit_sheet"]]
-    if not circuit_sheets:
-        st.warning("This net only appears on test-point summary sheets, not on a circuit "
-                   "page — so the drawing below shows the reference table, not the circuit.")
+    # Sheet choice: prefer sheets where this net was actually found, but always
+    # allow browsing every sheet so the pane is never a dead end.
+    found = [s["filename"] for s in sheets]
+    options = found + [d["filename"] for d in all_docs if d["filename"] not in found]
+    titles = {d["filename"]: (d.get("title") or d["filename"]) for d in all_docs}
+    by_name = {s["filename"]: s for s in sheets}
 
-    def _slab(i):
-        s = sheets[i]
-        tag = f"{s['component_count']} components" if s["is_circuit_sheet"] else "reference table"
-        return f"{s['title']}  ·  {tag}"
+    def _label(fn):
+        s = by_name.get(fn)
+        if s:
+            tag = f"{s['component_count']} components" if s["is_circuit_sheet"] else "reference table"
+            return f"✓ {titles.get(fn, fn)} · {tag}"
+        return f"   {titles.get(fn, fn)}"
 
-    c1, c2 = st.columns([3, 2])
-    with c1:
-        idx = st.selectbox("Sheet", range(len(sheets)), format_func=_slab, key="ws_sheet")
-    with c2:
-        zoom = st.select_slider("Zoom", options=[0.5, 0.75, 1.0, 1.5, 2.5, 4.0],
-                                value=1.5 if deep else 1.0, key="ws_zoom",
-                                help="Higher zoom = tighter crop around the net label.")
-
-    sheet = sheets[idx]
-    with st.spinner("Rendering schematic…"):
-        png = fs.render_net_view(program, sheet, scope, zoom=float(zoom), index=index)
-
-    if png:
-        legend = "  ".join(
-            f'<span style="margin-right:14px;"><span style="display:inline-block;width:11px;'
-            f'height:11px;background:{c};border-radius:2px;margin-right:5px;'
-            f'vertical-align:middle;"></span><span style="font-size:.78em;color:{TEXT_MUTED};">'
-            f'{lab}</span></span>'
-            for lab, c in (("this rail", "#DC2663"), ("its source", "#7C3AED"),
-                           ("what it feeds", "#2563EB"), ("related TP", "#059669")))
-        st.markdown(f'<div style="margin:2px 0 6px;">{legend}</div>', unsafe_allow_html=True)
-        st.image(png, use_container_width=True)
-        b1, b2 = st.columns(2)
-        with b1:
-            st.download_button("📥 Save this view", data=png, mime="image/png",
-                               file_name=f"{scope.get('tp')}_{sheet['filename']}",
-                               use_container_width=True, key="ws_dl_view")
-        with b2:
-            full = os.path.join(si.schematics_dir(program), sheet["filename"])
-            try:
-                with open(full, "rb") as f:
-                    st.download_button("📥 Full sheet", data=f.read(), mime="image/png",
-                                       file_name=sheet["filename"],
-                                       use_container_width=True, key="ws_dl_full")
-            except Exception:
-                pass
-        st.caption(f"Anchored on `{sheet['anchor']}` in {sheet['filename']}")
+    if found:
+        st.caption(f"`{scope.get('net') or scope.get('tp')}` found on {len(found)} sheet(s) — "
+                   "marked with ✓ and highlighted in the drawing.")
     else:
-        st.error("Could not render this sheet.")
+        st.warning(f"`{scope.get('net') or scope.get('tp')}` wasn't located on any sheet, so "
+                   "nothing is highlighted. Pick a sheet to read manually.")
+
+    fn = st.selectbox("Sheet", options, format_func=_label, key="ws_sheet")
+    sheet = by_name.get(fn)
+
+    markers = fs.sheet_markers(program, sheet, scope, index=index) if sheet else []
+    if markers:
+        st.markdown(schematic_canvas.legend_html(), unsafe_allow_html=True)
+
+    path = os.path.join(si.schematics_dir(program), fn)
+    ok = schematic_canvas.render_canvas(
+        path, markers=markers, height=height,
+        initial="marker" if (markers and not deep) else "fit",
+        key=f"ws_canvas_{fn}")
+    if not ok:
+        st.error("Could not load this sheet image.")
+        return
+
+    c1, c2 = st.columns(2)
+    with c1:
+        try:
+            with open(path, "rb") as f:
+                st.download_button("📥 Download full sheet", data=f.read(), mime="image/png",
+                                   file_name=fn, use_container_width=True, key="ws_dl_full")
+        except Exception:
+            pass
+    with c2:
+        if sheet:
+            st.caption(f"Highlighted anchor: `{sheet['anchor']}`")
 
     # Navigation aid — explicitly NOT a diagnosis
-    if sheet["is_circuit_sheet"]:
-        with st.expander("🔤 Reference designators printed in this area (navigation aid)",
+    if sheet and sheet.get("is_circuit_sheet"):
+        with st.expander("🔤 Designators printed near this net (navigation aid, not a diagnosis)",
                          expanded=False):
-            near = fs.designators_near(program, sheet["filename"], sheet["box"], index=index)
+            near = fs.designators_near(program, fn, sheet["box"], index=index)
             if near:
-                st.caption("These are simply the designators OCR found near the net label on "
-                           "this sheet. **Proximity on a drawing does not prove a part is on "
-                           "this net** — use this to navigate, then read the schematic to "
-                           "confirm which parts actually belong to the circuit.")
+                st.caption("Simply the reference designators OCR found near the net label. "
+                           "**Being drawn nearby does not prove a part is on this net** — "
+                           "use these to orient yourself, then read the drawing to confirm.")
                 st.write("  ".join(f"`{n['designator']}`" for n in near))
             else:
-                st.caption("No designators resolved near this label.")
+                st.caption("None resolved near this label.")
 
 
 # --------------------------------------------------------------------------- #
@@ -368,17 +369,17 @@ def render_debug_workspace():
 
     # --- Two panes ---
     if deep:
-        focus = st.session_state.get("ws_focus")
+        # Full width for the drawing; measurements collapse out of the way.
+        with st.expander("📏 Measurements", expanded=False):
+            focus = _measure_pane(program, tps, phases, readings)
         if focus not in tps:
-            focus = failing[0] if failing else next(iter(tps))
+            focus = (failing[0] if failing else next(iter(tps)))
         analysis = fs.analyze(program, focus, readings.get(focus), tps, graph, sch,
                               signature=_signature_for(focus, readings, tps),
                               index=index)
-        _schematic_pane(program, analysis, index, deep=True)
-        with st.expander("📏 Measurements", expanded=False):
-            _measure_pane(program, tps, phases, readings)
+        _schematic_pane(program, analysis, index, deep=True, height=820)
     else:
-        left, right = st.columns([1, 1], gap="large")
+        left, right = st.columns([5, 6], gap="large")
         with left:
             focus = _measure_pane(program, tps, phases, readings)
         if not focus:
@@ -387,7 +388,7 @@ def render_debug_workspace():
                               signature=_signature_for(focus, readings, tps),
                               index=index)
         with right:
-            _schematic_pane(program, analysis, index)
+            _schematic_pane(program, analysis, index, height=620)
 
     st.markdown("---")
 
