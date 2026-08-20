@@ -307,22 +307,11 @@ def _phase_results(phase_tps, readings, pnum):
         grp = list(phase_tps.values())[0]["group"]
         st.markdown(f'<div class="vb vb-f"><span class="led {led}"></span>❌ Phase {pnum} VERDICT: <b>FAIL</b> — {len(fails)} rail(s) out of spec</div>', unsafe_allow_html=True)
         st.markdown("##### Recommended Actions")
-        for _fi, (_fkey, tp, m) in enumerate(fails):
+        for _fkey, tp, m in fails:
             st.error(f"**{tp['tp']} ({tp['name']})** - {m}\n\n**Subsystem:** {tp['subsystem']}\n\n**Action:** {tp['fail_action']}")
             _render_schematic_lookup(tp["tp"])
-            # Parallel schematic root-cause: highlight this rail's sub-circuit
-            # and rank the components worth checking.
-            with st.expander(f"📐 {tp['tp']} sub-circuit on the schematic + suspect components",
-                             expanded=False):
-                try:
-                    import schematic_viewer as _sv
-                    _sig = daa.signature_for(_fkey, st.session_state.get("debugger_readings", {}),
-                                             test_points_for(), evaluate)
-                    _sv.render_suspect_analysis(get_selected_program(), _fkey,
-                                                None if _sig == "dead_unknown" else _sig,
-                                                compact=True, key_prefix=f"ph{pnum}_{_fi}")
-                except Exception as e:
-                    st.caption(f"Schematic analysis unavailable: {e}")
+        st.caption("� For the schematic side-by-side with these measurements, switch to the "
+                   "**🔬 Debug Workspace** view.")
         for tk, td in fault_trees_for().items():
             if tk in grp or grp.startswith(tk.split(" ")[0]):
                 st.markdown(f'<div class="vb vb-f" style="border-color:#e67e22;">🔍 Errors detected. Deep dive in <b>"{td["title"]}"</b> to isolate the fault.</div>', unsafe_allow_html=True)
@@ -844,20 +833,20 @@ def _render_daa_deduction(ded, resistances):
         if h.get("schematic_path"):
             st.markdown(f"**Signal path:** `{h['schematic_path']}`")
 
-        # --- Parallel schematic view: highlight this rail's sub-circuit and
-        # rank the components to check, right next to the measurement. Imported
-        # lazily because schematic_viewer imports this module.
+        # Point at the workspace for the side-by-side schematic rather than
+        # nesting another viewer inside this report.
         _node = h.get("node")
         if _node:
-            with st.expander("📐 Sub-circuit on the schematic + suspect components",
-                             expanded=(i == 0)):
-                try:
-                    import schematic_viewer as _sv
-                    _sv.render_suspect_analysis(
-                        get_selected_program(), _node, h.get("signature"),
-                        compact=True, key_prefix=f"dbg{i}")
-                except Exception as e:
-                    st.caption(f"Schematic analysis unavailable: {e}")
+            try:
+                import schematic_index as _si
+                _hits = _si.search_index(get_selected_program(),
+                                         str(h["rail"].split(" — ")[0]).strip())
+                if _hits:
+                    st.caption("📐 This rail appears on: "
+                               + ", ".join(dict.fromkeys(x["filename"] for x in _hits[:3]))
+                               + " — open the **🔬 Debug Workspace** to see it beside the readings.")
+            except Exception:
+                pass
 
         st.markdown("##### Ranked failure mechanisms (knowledge base)")
         for rank, mech in enumerate(h.get("mechanisms", [])):
